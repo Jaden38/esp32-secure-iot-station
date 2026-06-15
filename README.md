@@ -216,9 +216,9 @@ potentiomètre étant absents, ils n'apparaissent pas (OLED virtuel + seuil web)
 | DHT22 | VCC | 3V3 | rail **+** |
 | DHT22 | DATA | **GPIO4** | + pull-up **10 kΩ** vers 3V3 |
 | DHT22 | GND | GND | rail **−** |
-| LED rouge | anode (+) | **GPIO25** | résistance **330 Ω** |
-| LED verte | anode (+) | **GPIO26** | résistance **330 Ω** |
-| LED bleue | anode (+) | **GPIO33** | résistance **330 Ω** |
+| LED rouge | anode (+) | **GPIO25** | résistance **470 Ω** |
+| LED verte | anode (+) | **GPIO26** | résistance **470 Ω** |
+| LED bleue | anode (+) | **GPIO33** | résistance **470 Ω** |
 | LEDs | cathode (−) | GND | rail **−** |
 | Relais | IN / SIG | **GPIO32** | — (3,3 V suffit sur module opto) |
 | Relais | VCC | 5V (VIN) | rail **+** bas |
@@ -249,9 +249,9 @@ potentiomètre étant absents, ils n'apparaissent pas (OLED virtuel + seuil web)
 ```
  DHT22 (3 fils utiles)                LEDs (cathode commune -> GND)
  ---------------------                -----------------------------
-   3V3 ──┬──────────────┐             GPIO25 ──[330Ω]──▶|──┐
-         │            [10kΩ]          GPIO26 ──[330Ω]──▶|──┤
-         │              │             GPIO33 ──[330Ω]──▶|──┤
+   3V3 ──┬──────────────┐             GPIO25 ──[470Ω]──▶|──┐
+         │            [10kΩ]          GPIO26 ──[470Ω]──▶|──┤
+         │              │             GPIO33 ──[470Ω]──▶|──┤
    VCC ──┘   DATA ──────┴── GPIO4                         │
    GND ───────────────────── GND                         GND
    (pull-up 10kΩ inutile si        ▶|  = LED : anode ─▶|─ cathode
@@ -306,7 +306,7 @@ J │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·
 >   ou lignes **I/J** (banc bas).
 > - **Rails** : amène `3V3`, `5V/VIN` et `GND` de l'ESP32 vers les rails ± (haut/bas),
 >   puis alimente chaque composant depuis le rail le plus proche.
-> - **LED** (×3) : `GPIO25/26/33` → **330 Ω** → anode → cathode → rail **−**.
+> - **LED** (×3) : `GPIO25/26/33` → **470 Ω** → anode → cathode → rail **−**.
 > - **DHT22** : `VCC`→rail +(3V3), `GND`→rail −, `DATA`→`GPIO4` **+ 10 kΩ vers 3V3**
 >   (résistance inutile si le module l'intègre déjà).
 > - **Relais** : `VCC`→rail +(5V), `GND`→rail −, `IN`→`GPIO32`.
@@ -316,7 +316,7 @@ J │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·
 
 | Quantité | Valeur | Rôle |
 |---|---|---|
-| 3 | **330 Ω** (220–470 Ω accepté) | limitation courant LEDs R/G/B |
+| 3 | **470 Ω** | limitation courant LEDs R/G/B |
 | 1 | **10 kΩ** | pull-up DATA DHT22 (si non intégré au module) |
 
 > **Variante relais « nu » (sans module driver)** : ajouter un transistor NPN
