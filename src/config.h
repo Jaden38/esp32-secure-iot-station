@@ -47,6 +47,7 @@ static constexpr int PIN_RELAY    = 32;   // sortie GPIO -> relais 5V
 // DHT22 : période mini 2 s entre deux lectures fiables -> 2000 ms.
 static constexpr uint32_t SENSOR_PERIOD_MS = 2000;   // 0.5 Hz (limite DHT22)
 static constexpr size_t   FILTER_WINDOW     = 8;     // moyenne glissante
+static constexpr uint32_t CONTACT_DEBOUNCE_MS = 30;  // anti-rebond contact 2 fils
 // Bornes de plausibilité (détection valeurs aberrantes) — plage DHT22.
 static constexpr float TEMP_MIN = -40.0f, TEMP_MAX = 80.0f;
 static constexpr float HUM_MIN  =   0.0f, HUM_MAX  = 100.0f;

@@ -9,7 +9,10 @@
 //    - push SensorSample -> sensorDataQueue
 //    - format JSON imposé -> outboundJsonQueue
 //
-//  Choix lib (à valider en tâche #2) : DHTesp (provisoire) — cf. platformio.ini.
+//  Choix lib (figé tâche #2) : DHTesp (beegee-tokyo). Comparée à l'approche RMT
+//  non-bloquante (dhtESP32-rmt / esp32DHT) : DHTesp est éprouvée et son unique
+//  défaut — une section critique ~5 ms (portENTER_CRITICAL) — est neutralisé ici
+//  car l'acquisition est épinglée sur le Cœur 0, isolée de la stack WiFi (Cœur 1).
 // ============================================================================
 #pragma once
 
