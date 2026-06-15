@@ -67,3 +67,52 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# --- PlatformIO ---
+.pio/
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json
+lib/readme.txt
+include/README
+
+# --- IDE / Editor ---
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/c_cpp_properties.json
+!.vscode/launch.json
+.idea/
+*.code-workspace
+
+# --- ESP32 build artifacts ---
+*.bin
+*.elf
+*.map
+*.hex
+firmware/
+build_output/
+
+# --- OS noise ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Secrets / local config ---
+secrets.h
+secrets.hpp
+*.local.h
+.env
+.env.local
+credentials.json
+
+# --- Node-RED local state (si tu commits Node-RED dans le repo) ---
+.node-red/.config.*
+.node-red/.flows.json.backup
+.node-red/node_modules/
+.node-red/.npm/
+
+# --- Captures de démo / divers ---
+*.log
+demo/captures/
