@@ -19,6 +19,16 @@ static void relay(bool on) {
     actuatorsApply(c);
 }
 
+// 3 LEDs DISCRÈTES (pas de mélange RGB), ordre physique rouge/orange/verte :
+//   canal R = rouge (GPIO25), G = orange (GPIO26), B = verte (GPIO33).
+// Une seule allumée à la fois.
+enum Status : uint8_t { ST_OFF, ST_GREEN, ST_ORANGE, ST_RED };
+static void statusLed(Status s) {
+    led(s == ST_RED    ? 255 : 0,   // R -> GPIO25 (rouge)
+        s == ST_ORANGE ? 255 : 0,   // G -> GPIO26 (orange)
+        s == ST_GREEN  ? 255 : 0);  // B -> GPIO33 (verte)
+}
+
 bool controlInit() {
     return true;
 }
@@ -54,23 +64,23 @@ void controlTask(void* pv) {
             relayState = false;
             relay(false);
             blink = !blink;
-            led(blink ? 255 : 0, 0, 0);          // rouge clignotant
+            statusLed(blink ? ST_RED : ST_OFF);   // rouge clignotant
         } else if (cfg.mode == MODE_MANUEL) {
             relayState = cfg.relayManual;
             relay(relayState);
-            led(0, 0, 255);                       // bleu = mode manuel
+            statusLed(ST_ORANGE);                 // orange = mode manuel
         } else {                                  // MODE_AUTO
             if (!s.valid) {
-                led(255, 0, 0);                   // rouge = capteur en défaut
+                statusLed(ST_RED);                // rouge = capteur en défaut
             } else {
                 if (s.temp >= cfg.tempOn)                  relayState = true;
                 else if (s.temp <= cfg.tempOn - cfg.hysteresis) relayState = false;
                 // sinon : on garde l'état (bande d'hystérésis)
                 relay(relayState);
 
-                if (s.humidity > cfg.humAlert) led(255, 60, 0);   // orange humidité
-                else if (relayState)           led(255, 100, 0);  // orange ventilation
-                else                           led(0, 255, 0);    // vert nominal
+                // orange si ventilation active ou humidité haute, sinon vert
+                if (relayState || s.humidity > cfg.humAlert) statusLed(ST_ORANGE);
+                else                                         statusLed(ST_GREEN);
             }
         }
 

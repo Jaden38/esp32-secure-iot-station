@@ -219,7 +219,8 @@ commandes), **MongoDB** (NoSQL), et le bonus **InfluxDB** + **Grafana**
 ## Schéma de câblage (breadboard)
 
 Câblage basé sur les broches figées dans `src/config.h`. Le « LED RGB » est réalisé
-avec **3 LEDs discrètes** (rouge / verte / bleue), une par sortie PWM. L'OLED et le
+avec **3 LEDs discrètes** (rouge / orange / verte) servant de voyant d'état, une par
+sortie PWM (ordre physique GPIO25 rouge, GPIO26 orange, GPIO33 verte). L'OLED et le
 potentiomètre étant absents, ils n'apparaissent pas (OLED virtuel + seuil web).
 
 ### Table de connexions (netlist)
@@ -229,9 +230,9 @@ potentiomètre étant absents, ils n'apparaissent pas (OLED virtuel + seuil web)
 | DHT22 | VCC | 3V3 | rail **+** |
 | DHT22 | DATA | **GPIO4** | + pull-up **10 kΩ** vers 3V3 |
 | DHT22 | GND | GND | rail **−** |
-| LED rouge | anode (+) | **GPIO25** | résistance **470 Ω** |
-| LED verte | anode (+) | **GPIO26** | résistance **470 Ω** |
-| LED bleue | anode (+) | **GPIO33** | résistance **470 Ω** |
+| LED rouge (alarme) | anode (+) | **GPIO25** | résistance **470 Ω** |
+| LED orange (actif) | anode (+) | **GPIO26** | résistance **470 Ω** |
+| LED verte (nominal) | anode (+) | **GPIO33** | résistance **470 Ω** |
 | LEDs | cathode (−) | GND | rail **−** |
 | Relais | IN / SIG | **GPIO32** | — (3,3 V suffit sur module opto) |
 | Relais | VCC | 5V (VIN) | rail **+** bas |
@@ -249,9 +250,9 @@ potentiomètre étant absents, ils n'apparaissent pas (OLED virtuel + seuil web)
                         |                        |
    DHT22 DATA  <--------|GPIO4              GPIO32|-------->  RELAIS IN
                         |                        |
-   LED R  <------------ |GPIO25             GPIO26|-------------> LED G
+   LED rouge <--------- |GPIO25             GPIO26|------------> LED orange
                         |                        |
-   LED B  <------------ |GPIO33             GPIO27|<-----  CONTACT (fil A)
+   LED verte <--------- |GPIO33             GPIO27|<-----  CONTACT (fil A)
                         +------------------------+
 
    Légende fils :  <--- sortie ESP32 (commande)     ---< entrée ESP32 (lecture)
