@@ -203,6 +203,14 @@ Bonus : **Grafana** (historisation + dashboard + alerte).
 - **Serveur** : Node-RED + MongoDB
 - **Bonus** : InfluxDB + Grafana
 
+## Serveur central (Docker)
+
+Toute la stack serveur est dans [`server/`](server/) : un `docker compose up`
+lance **Mosquitto** (broker MQTT auth), **Node-RED** (validation + dashboard +
+commandes), **MongoDB** (NoSQL), et le bonus **InfluxDB** + **Grafana**
+(historisation, dashboard, alertes absence/anomalie). Voir
+[`server/README.md`](server/README.md) pour la procédure détaillée.
+
 ## Schéma de câblage (breadboard)
 
 Câblage basé sur les broches figées dans `src/config.h`. Le « LED RGB » est réalisé
