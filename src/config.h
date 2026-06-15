@@ -71,6 +71,14 @@ static constexpr bool LED_COMMON_ANODE = false;
 static constexpr bool RELAY_ACTIVE_LOW = true;
 
 // ---------------------------------------------------------------------------
+//  Storage offline (LittleFS, cf. CLAUDE.md §4)
+// ---------------------------------------------------------------------------
+// Buffer JSONL des messages non publiés ; compaction au-delà de MAX (on garde
+// les plus récents jusqu'à KEEP) pour borner l'usure flash.
+static constexpr size_t STORAGE_MAX_BYTES  = 256 * 1024;
+static constexpr size_t STORAGE_KEEP_BYTES = 192 * 1024;
+
+// ---------------------------------------------------------------------------
 //  Supervision (cf. CLAUDE.md §9)
 // ---------------------------------------------------------------------------
 static constexpr uint32_t SUPERVISION_PERIOD_MS = 10000;  // 0.1 Hz
