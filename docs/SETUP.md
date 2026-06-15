@@ -131,8 +131,8 @@ cp include/secrets.example.h include/secrets.h
 Édite `include/secrets.h` :
 
 ```c
-#define WIFI_SSID     "AndroidAP-Damien"   // ton Wi-Fi / hotspot
-#define WIFI_PASSWORD "ton-mot-de-passe"
+#define WIFI_SSID       "your-ssid"        // ton Wi-Fi / hotspot
+#define WIFI_PASSWORD   "your-wifi-password"
 
 #define MQTT_HOST     "192.168.x.y"        // IP LAN du PC (voir §4)
 #define MQTT_PORT     1883
