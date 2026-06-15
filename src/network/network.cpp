@@ -5,12 +5,11 @@
 #include "storage/storage.h"
 #include "security/security.h"
 #include "supervision/supervision.h"
-#include "secrets.h"
+#include "runtime_config.h"
+#include "secrets.h"        // WIFI_SSID / WIFI_PASSWORD (le MQTT vient du NVS)
 #include <WiFi.h>
 #include <MQTT.h>          // 256dpi/arduino-mqtt (lwmqtt)
 #include <time.h>
-
-// TODO(tâche #6) : surcharger host/port/user/pass depuis runtime_config (NVS).
 
 static WiFiClient  net;
 static MQTTClient  mqtt(512);     // buffers R/W 512 o (payload imposé < 256)
@@ -51,6 +50,16 @@ static void startNtpOnce() {
 
 // --- MQTT : connexion auth + LWT + souscription commandes --------------------
 static void ensureMqtt() {
+    // Config MQTT modifiée via l'UI -> on se déconnecte pour repartir dessus.
+    if (runtimeMqttDirty()) {
+        MqttConfig cfg = runtimeGetMqtt();
+        mqtt.disconnect();
+        mqtt.begin(cfg.host, cfg.port, net);
+        runtimeClearMqttDirty();
+        xEventGroupClearBits(netState, BIT_MQTT_OK);
+        log_i("[net] config MQTT mise à jour -> %s:%u", cfg.host, cfg.port);
+    }
+
     if (mqtt.connected()) {
         xEventGroupSetBits(netState, BIT_MQTT_OK);
         return;
@@ -62,9 +71,10 @@ static void ensureMqtt() {
     if (last != 0 && now - last < 3000) return;   // une tentative / 3 s
     last = now;
 
+    MqttConfig cfg = runtimeGetMqtt();
     mqtt.setWill(MQTT_TOPIC_LWT, "offline", true, 1);    // LWT retained QoS1
-    log_i("[net] connexion MQTT %s:%d...", MQTT_HOST, MQTT_PORT);
-    if (mqtt.connect(DEVICE_ID, MQTT_USER, MQTT_PASS)) {
+    log_i("[net] connexion MQTT %s:%u...", cfg.host, cfg.port);
+    if (mqtt.connect(DEVICE_ID, cfg.user, cfg.pass)) {
         mqtt.subscribe(MQTT_TOPIC_CMD, 1);               // commandes QoS1
         mqtt.publish(MQTT_TOPIC_LWT, "online", true, 1);
         xEventGroupSetBits(netState, BIT_MQTT_OK);
@@ -93,7 +103,8 @@ static void pumpOutbound() {
 bool networkInit() {
     WiFi.persistent(false);
     WiFi.mode(WIFI_STA);
-    mqtt.begin(MQTT_HOST, MQTT_PORT, net);
+    MqttConfig cfg = runtimeGetMqtt();
+    mqtt.begin(cfg.host, cfg.port, net);
     mqtt.onMessage(onMqttMessage);
     mqtt.setKeepAlive(30);
     return true;

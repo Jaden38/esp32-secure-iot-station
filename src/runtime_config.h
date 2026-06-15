@@ -1,17 +1,30 @@
 // ============================================================================
 //  runtime_config.h — Configuration MODIFIABLE à chaud (vs config.h compile-time).
-//  Écrite par web/ (UI), lue par sensors/ & network/. Persistance NVS (tâche #6).
-//  Remplace notamment le potentiomètre : le "seuil" est réglé via l'UI web.
+//  Écrite par web/ (UI), lue par sensors/ & network/. Persistance NVS (Preferences).
+//   - "seuil" : remplace le potentiomètre (slider web)
+//   - config MQTT : broker/port/user/pass éditables depuis l'UI (CLAUDE.md §5)
 // ============================================================================
 #pragma once
 
 #include <Arduino.h>
 
-// Charge la config depuis NVS (ou valeurs par défaut). À appeler dans setup().
+// Charge la config depuis NVS (défauts secrets.h si absente). À appeler dans setup().
 void runtimeConfigInit();
 
-// --- Seuil (ex-potentiomètre), accès atomique thread-safe ---
+// --- Seuil (ex-potentiomètre), accès thread-safe ---
 uint16_t runtimeGetThreshold();
-void     runtimeSetThreshold(uint16_t v);   // borné [THRESHOLD_MIN..MAX] + persist
+void     runtimeSetThreshold(uint16_t v);     // borné + persisté
 
-// TODO(tâche #6) : getters/setters config MQTT (host/port/user/pass/topic) NVS.
+// --- Configuration MQTT (NVS) ---
+struct MqttConfig {
+    char     host[64];
+    uint16_t port;
+    char     user[32];
+    char     pass[64];
+};
+MqttConfig runtimeGetMqtt();
+void       runtimeSetMqtt(const MqttConfig& c);   // persiste + marque "dirty"
+
+// "dirty" : positionné quand la config MQTT change -> network/ force une reconnexion.
+bool runtimeMqttDirty();
+void runtimeClearMqttDirty();

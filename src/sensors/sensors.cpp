@@ -9,6 +9,19 @@
 
 static DHTesp dht;
 
+// Cache du dernier échantillon (fan-out vers web/ & supervision/).
+static SensorSample      s_latest = {};
+static SemaphoreHandle_t s_latestMutex = nullptr;
+
+SensorSample sensorsGetLatest() {
+    SensorSample copy = {};
+    if (s_latestMutex && xSemaphoreTake(s_latestMutex, pdMS_TO_TICKS(20)) == pdTRUE) {
+        copy = s_latest;
+        xSemaphoreGive(s_latestMutex);
+    }
+    return copy;
+}
+
 // ===========================================================================
 //  Contact 2 fils (ex-bouton) : interruption + anti-rebond logiciel.
 //  Montage INPUT_PULLUP -> fils en contact (vers GND) = niveau BAS.
@@ -68,6 +81,7 @@ static void queueSendFresh(QueueHandle_t q, const T* item) {
 }
 
 bool sensorsInit() {
+    s_latestMutex = xSemaphoreCreateMutex();
     dht.setup(PIN_DHT, DHTesp::DHT22);
     pinMode(PIN_CONTACT, INPUT_PULLUP);
     s_contactClosed = (digitalRead(PIN_CONTACT) == LOW);
@@ -100,6 +114,12 @@ void sensorTask(void* pv) {
         s.threshold = runtimeGetThreshold();
         s.contact   = s_contactClosed;
         s.valid     = inRange && (s_fCount > 0);
+
+        // Met à jour le cache "live" (lu par web/ & supervision/)
+        if (s_latestMutex && xSemaphoreTake(s_latestMutex, pdMS_TO_TICKS(20)) == pdTRUE) {
+            s_latest = s;
+            xSemaphoreGive(s_latestMutex);
+        }
 
         queueSendFresh(sensorDataQueue, &s);
 

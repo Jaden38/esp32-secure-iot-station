@@ -16,8 +16,13 @@
 // ============================================================================
 #pragma once
 
-// Init matériel capteurs (I²C, ADC, IRQ bouton). À appeler dans setup().
+#include "app_types.h"
+
+// Init matériel capteurs (DHT22 + contact IRQ). À appeler dans setup().
 bool sensorsInit();
 
 // Tâche FreeRTOS d'acquisition périodique (CORE_SENSORS, PRIO_SENSORS).
 void sensorTask(void* pv);
+
+// Dernier échantillon (cache thread-safe) — pour web/ & supervision/ (fan-out).
+SensorSample sensorsGetLatest();
