@@ -59,6 +59,18 @@ static constexpr uint16_t THRESHOLD_MAX     = 4095;
 static constexpr uint16_t THRESHOLD_DEFAULT = 2048;
 
 // ---------------------------------------------------------------------------
+//  Actionneurs — LED RGB (LEDC) + relais
+// ---------------------------------------------------------------------------
+static constexpr uint32_t LED_PWM_FREQ     = 5000;  // Hz
+static constexpr uint8_t  LED_PWM_RES_BITS = 8;     // duty 0..255
+// LED RGB réalisée avec 3 LEDs discrètes à CATHODE commune (anode = GPIO+R).
+// Passer à true si LED RGB à anode commune (logique PWM inversée).
+static constexpr bool LED_COMMON_ANODE = false;
+// ⚠️ VÉRIFIER le module relais : la plupart des modules bon marché sont
+// ACTIF-BAS (IN=LOW -> relais fermé). Mettre false si actif-haut.
+static constexpr bool RELAY_ACTIVE_LOW = true;
+
+// ---------------------------------------------------------------------------
 //  Supervision (cf. CLAUDE.md §9)
 // ---------------------------------------------------------------------------
 static constexpr uint32_t SUPERVISION_PERIOD_MS = 10000;  // 0.1 Hz
