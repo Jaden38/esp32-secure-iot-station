@@ -1,0 +1,20 @@
+// ============================================================================
+//  sensors/ — Acquisition DHT22 + contact (2 fils, IRQ) + seuil web.
+//  Responsabilités (cf. CLAUDE.md §3) :
+//    - lecture DHT22 (1-wire sur PIN_DHT — pas d'I²C, donc pas d'i2cMutex)
+//    - état contact (GPIO + IRQ) + seuil courant via runtimeGetThreshold()
+//      (potentiomètre absent -> seuil réglé depuis l'UI web)
+//    - filtrage (moyenne glissante, FILTER_WINDOW)
+//    - timestamp + détection valeurs aberrantes (bornes config.h)
+//    - push SensorSample -> sensorDataQueue
+//    - format JSON imposé -> outboundJsonQueue
+//
+//  Choix lib (à valider en tâche #2) : DHTesp (provisoire) — cf. platformio.ini.
+// ============================================================================
+#pragma once
+
+// Init matériel capteurs (I²C, ADC, IRQ bouton). À appeler dans setup().
+bool sensorsInit();
+
+// Tâche FreeRTOS d'acquisition périodique (CORE_SENSORS, PRIO_SENSORS).
+void sensorTask(void* pv);

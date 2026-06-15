@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<!-- Interface web embarquée — servie depuis LittleFS (cf. CLAUDE.md §5).
+     Aucun JS/CSS inliné : tout est dans app.js / style.css. -->
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ESP32 Secure IoT Station</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>ESP32 Secure IoT Station</h1>
+    <div id="conn">
+      <span id="wifi" class="badge">Wi-Fi —</span>
+      <span id="mqtt" class="badge">MQTT —</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Live capteurs -->
+    <section id="live">
+      <h2>Mesures live</h2>
+      <ul>
+        <li>Température : <span id="temp">—</span> °C</li>
+        <li>Humidité : <span id="humidity">—</span> %</li>
+        <li>Contact : <span id="contact">—</span></li>
+      </ul>
+    </section>
+
+    <!-- OLED virtuel : reproduit l'écran de supervision (matériel absent) -->
+    <section id="oled-section">
+      <h2>Supervision (OLED virtuel)</h2>
+      <pre id="oled" class="oled">—</pre>
+    </section>
+
+    <!-- Seuil réglable : remplace le potentiomètre absent -->
+    <section id="threshold-section">
+      <h2>Seuil (ex-potentiomètre)</h2>
+      <input type="range" id="threshold" min="0" max="4095" value="2048" />
+      <span id="threshold-val">2048</span>
+    </section>
+
+    <!-- Configuration MQTT -->
+    <section id="config">
+      <h2>Configuration MQTT</h2>
+      <form id="mqtt-form">
+        <label>Broker <input name="host" /></label>
+        <label>Port <input name="port" type="number" value="1883" /></label>
+        <label>User <input name="user" /></label>
+        <label>Pass <input name="pass" type="password" /></label>
+        <label>Topic <input name="topic" /></label>
+        <button type="submit">Enregistrer</button>
+      </form>
+    </section>
+
+    <!-- Commande actionneurs -->
+    <section id="control">
+      <h2>Actionneurs</h2>
+      <button id="relay-on">Relais ON</button>
+      <button id="relay-off">Relais OFF</button>
+      <label>LED RGB <input type="color" id="led" value="#000000" /></label>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
