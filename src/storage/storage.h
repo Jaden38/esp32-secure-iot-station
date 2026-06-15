@@ -1,5 +1,5 @@
 // ============================================================================
-//  storage/ — LittleFS : buffer offline + replay (cf. CLAUDE.md §4).
+//  storage/ — LittleFS : buffer offline + replay (cf. cahier des charges §4).
 //  Quand MQTT KO : append du JSON dans buffer.jsonl (1 ligne = 1 message).
 //  À la reconnexion (BIT_MQTT_OK) : relit et republie, puis tronque.
 //  Tout accès FS sous fsMutex. Choix (figé tâche #5) : LittleFS — SPIFFS est

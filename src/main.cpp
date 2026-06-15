@@ -1,5 +1,5 @@
 // ============================================================================
-//  main.cpp — Point d'entrée. AUCUNE logique métier ici (cf. CLAUDE.md §1).
+//  main.cpp — Point d'entrée. AUCUNE logique métier ici (cf. cahier des charges §1).
 //  Rôle : init matériel + primitives FreeRTOS + création des 5 tâches épinglées.
 //  loop() reste vide (le travail vit dans les tâches).
 //
@@ -44,7 +44,7 @@ void setup() {
     if (!webInit())         halt("webInit");
     if (!supervisionInit()) halt("supervisionInit");
 
-    // --- Création des tâches FreeRTOS épinglées (cf. CLAUDE.md §2) ---
+    // --- Création des tâches FreeRTOS épinglées (cf. cahier des charges §2) ---
     xTaskCreatePinnedToCore(sensorTask,      "SensorAcq",   STACK_SENSORS,
                             nullptr, PRIO_SENSORS,     nullptr, CORE_SENSORS);
     xTaskCreatePinnedToCore(supervisionTask, "Supervision", STACK_SUPERVISION,

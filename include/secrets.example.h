@@ -9,11 +9,11 @@
 #define WIFI_SSID       "your-ssid"
 #define WIFI_PASSWORD   "your-wifi-password"
 
-// --- MQTT (auth obligatoire, cf. CLAUDE.md §8) ---
+// --- MQTT (auth obligatoire, cf. cahier des charges §8) ---
 #define MQTT_HOST       "192.168.1.10"
 #define MQTT_PORT       1883
 #define MQTT_USER       "iot"
 #define MQTT_PASS       "change-me"
 
-// --- Protection de l'API web locale (token Bearer, cf. CLAUDE.md §8) ---
+// --- Protection de l'API web locale (token Bearer, cf. cahier des charges §8) ---
 #define API_TOKEN       "change-me-long-random-token"

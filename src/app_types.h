@@ -28,7 +28,7 @@ struct ActuatorCmd {
 };
 
 // --- Payload sortant prêt à publier (SensorAcquisition -> Network/Storage) ---
-// Format JSON imposé sérialisé dans un buffer fixe (cf. CLAUDE.md §4).
+// Format JSON imposé sérialisé dans un buffer fixe (cf. cahier des charges §4).
 static constexpr size_t OUTBOUND_JSON_MAX = 256;
 struct OutboundPayload {
     char     json[OUTBOUND_JSON_MAX];

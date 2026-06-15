@@ -1,5 +1,5 @@
 // ============================================================================
-//  supervision/ — Supervision système (cf. CLAUDE.md §9).
+//  supervision/ — Supervision système (cf. cahier des charges §9).
 //  Compose périodiquement une "trame écran" (heap, uptime, latence MQTT,
 //  état Wi-Fi/MQTT) et la diffuse sur 3 sorties :
 //    1. Serial (toujours)

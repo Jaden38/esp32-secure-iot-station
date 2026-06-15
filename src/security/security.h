@@ -1,5 +1,5 @@
 // ============================================================================
-//  security/ — Sécurité minimale (cf. CLAUDE.md §8).
+//  security/ — Sécurité minimale (cf. cahier des charges §8).
 //    - auth MQTT : user/pass fournis par network/ (secrets.h)
 //    - validation JSON entrants : schéma / champs obligatoires / types
 //    - protection API locale : token Bearer

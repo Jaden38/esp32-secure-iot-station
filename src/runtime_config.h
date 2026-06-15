@@ -2,7 +2,7 @@
 //  runtime_config.h — Configuration MODIFIABLE à chaud (vs config.h compile-time).
 //  Écrite par web/ (UI), lue par sensors/ & network/. Persistance NVS (Preferences).
 //   - "seuil" : remplace le potentiomètre (slider web)
-//   - config MQTT : broker/port/user/pass éditables depuis l'UI (CLAUDE.md §5)
+//   - config MQTT : broker/port/user/pass éditables depuis l'UI (cahier des charges §5)
 // ============================================================================
 #pragma once
 

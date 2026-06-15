@@ -8,7 +8,7 @@
 #include <Arduino.h>
 
 // ---------------------------------------------------------------------------
-//  Identité du device / contrat MQTT (cf. CLAUDE.md §6)
+//  Identité du device / contrat MQTT
 //  Topic publish  : campus/<groupe>/<deviceID>/data
 //  Topic subscribe: campus/<groupe>/<deviceID>/cmd
 // ---------------------------------------------------------------------------
@@ -42,7 +42,7 @@ static constexpr int PIN_LED_B    = 33;
 static constexpr int PIN_RELAY    = 32;   // sortie GPIO -> relais 5V
 
 // ---------------------------------------------------------------------------
-//  Acquisition (cf. CLAUDE.md §3)
+//  Acquisition
 // ---------------------------------------------------------------------------
 // DHT22 : période mini 2 s entre deux lectures fiables -> 2000 ms.
 static constexpr uint32_t SENSOR_PERIOD_MS = 2000;   // 0.5 Hz (limite DHT22)
@@ -82,7 +82,7 @@ static constexpr bool LED_COMMON_ANODE = false;
 static constexpr bool RELAY_ACTIVE_LOW = true;
 
 // ---------------------------------------------------------------------------
-//  Storage offline (LittleFS, cf. CLAUDE.md §4)
+//  Storage offline (LittleFS)
 // ---------------------------------------------------------------------------
 // Buffer JSONL des messages non publiés ; compaction au-delà de MAX (on garde
 // les plus récents jusqu'à KEEP) pour borner l'usure flash.
@@ -90,7 +90,7 @@ static constexpr size_t STORAGE_MAX_BYTES  = 256 * 1024;
 static constexpr size_t STORAGE_KEEP_BYTES = 192 * 1024;
 
 // ---------------------------------------------------------------------------
-//  Supervision (cf. CLAUDE.md §9)
+//  Supervision
 // ---------------------------------------------------------------------------
 static constexpr uint32_t SUPERVISION_PERIOD_MS = 10000;  // 0.1 Hz
 
