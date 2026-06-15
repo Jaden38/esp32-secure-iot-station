@@ -9,23 +9,16 @@
 services:
 
   mosquitto:
-    image: eclipse-mosquitto:2
+    build:
+      context: ./mosquitto
+      args:
+        MQTT_USER: iot
+        MQTT_PASS: change-me
     container_name: iot-mosquitto
     restart: unless-stopped
     ports:
       - "1883:1883"
-    environment:
-      - MQTT_USER=iot
-      - MQTT_PASS=change-me
-    # (Re)crée le fichier de mots de passe haché au démarrage puis lance le
-    # broker. Le rm -f évite l'erreur "File exists" de mosquitto_passwd -c
-    # quand le fichier persiste déjà (bind-mount) au redémarrage.
-    command: >
-      sh -c "rm -f /mosquitto/config/passwd &&
-             mosquitto_passwd -b -c /mosquitto/config/passwd $$MQTT_USER $$MQTT_PASS &&
-             mosquitto -c /mosquitto/config/mosquitto.conf"
     volumes:
-      - ./mosquitto/config:/mosquitto/config
       - mosquitto_data:/mosquitto/data
 
   mongodb:

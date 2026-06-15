@@ -116,3 +116,6 @@ credentials.json
 # --- Captures de démo / divers ---
 *.log
 demo/captures/
+
+# Mosquitto passwd généré localement (anciens runs bind-mount)
+server/mosquitto/config/passwd
