@@ -116,6 +116,10 @@ void sensorTask(void* pv) {
         if (inRange) filterPush(th.temperature, th.humidity);
 
         // 4) Composition de l'échantillon (timestamp + seuil + contact)
+        // Resynchronise l'état du contact par lecture directe (évite que l'état
+        // ISR reste figé sur "fermé" à cause des rebonds au relâchement).
+        s_contactClosed = (digitalRead(PIN_CONTACT) == LOW);
+
         SensorSample s{};
         s.ts        = nowTs();
         s.temp      = round1(filterAvg(s_tBuf));
