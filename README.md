@@ -3,6 +3,9 @@
 Station IoT autonome et sécurisée pour bâtiments techniques, basée sur ESP32 + FreeRTOS.
 Projet du module **Système IoT** — Master II.
 
+> 🚀 **Mise en route pas à pas** : [`docs/SETUP.md`](docs/SETUP.md) ·
+> 📄 **Rapport technique** : [`docs/rapport-technique.md`](docs/rapport-technique.md)
+
 ## Objectifs
 
 - Acquisition multi-capteurs avec filtrage, timestamp et détection d'aberrations
