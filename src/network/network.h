@@ -6,7 +6,9 @@
 //    - publish outboundJsonQueue sur MQTT_TOPIC_DATA
 //    - subscribe MQTT_TOPIC_CMD -> validation -> actuatorCmdQueue
 //    - draine actuatorCmdQueue (web + mqtt) via actuatorsDrainQueue()
-//  Choix : PubSubClient (léger, QoS1 publish). Alternatives à comparer tâche #4.
+//    - synchronisation NTP (epoch pour les timestamps capteurs)
+//  Choix (figé tâche #4) : 256dpi/arduino-mqtt (MQTTClient, lwmqtt) — publish
+//  QoS 1 réel. PubSubClient écarté car limité au QoS 0 (cf. CLAUDE.md §6).
 // ============================================================================
 #pragma once
 
