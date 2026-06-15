@@ -195,7 +195,7 @@ Bonus : **Grafana** (historisation + dashboard + alerte).
 ## Stack
 
 - **Firmware** : PlatformIO (platform `pioarduino`) + Arduino-ESP32 core 3.x + FreeRTOS
-- **MQTT** : PubSubClient
+- **MQTT** : 256dpi/arduino-mqtt (lwmqtt, publish QoS 1)
 - **JSON** : ArduinoJson
 - **Capteur** : DHT22 / AM2302 (lib DHTesp, provisoire — cf. tâche #2)
 - **OLED** : U8g2
