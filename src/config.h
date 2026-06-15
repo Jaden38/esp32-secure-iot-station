@@ -52,11 +52,22 @@ static constexpr uint32_t CONTACT_DEBOUNCE_MS = 30;  // anti-rebond contact 2 fi
 static constexpr float TEMP_MIN = -40.0f, TEMP_MAX = 80.0f;
 static constexpr float HUM_MIN  =   0.0f, HUM_MAX  = 100.0f;
 
-// Seuil réglable (remplace le potentiomètre) — défini via l'UI web, plage ADC
-// 0..4095 par cohérence avec un vrai pot. Sert à déclencher le relais.
-static constexpr uint16_t THRESHOLD_MIN     = 0;
-static constexpr uint16_t THRESHOLD_MAX     = 4095;
-static constexpr uint16_t THRESHOLD_DEFAULT = 2048;
+// ---------------------------------------------------------------------------
+//  Régulation métier (supervision armoire technique) — valeurs par défaut.
+//  Toutes modifiables à chaud via l'UI web (runtime_config, NVS).
+// ---------------------------------------------------------------------------
+// Périodes des opérations FreeRTOS (découplées)
+static constexpr uint16_t ACQ_PERIOD_MS_DEFAULT  = 2000;  // acquisition (>=2s DHT)
+static constexpr uint16_t CTRL_PERIOD_MS_DEFAULT = 1000;  // régulation relais/LED
+static constexpr uint16_t PUB_PERIOD_MS_DEFAULT  = 10000; // publication MQTT
+// Seuils de régulation
+static constexpr float TEMP_ON_DEFAULT   = 28.0f;  // °C : ventilation ON au-dessus
+static constexpr float HYSTERESIS_DEFAULT = 2.0f;  // °C : OFF sous (tempOn - hyst)
+static constexpr float HUM_ALERT_DEFAULT = 70.0f;  // % : alerte humidité au-dessus
+// Mode de fonctionnement
+enum CtrlMode : uint8_t { MODE_AUTO = 0, MODE_MANUEL = 1 };
+static constexpr bool ESTOP_AUTO_RESET_DEFAULT = false;  // reset manuel par défaut
+static constexpr uint16_t ACQ_PERIOD_MS_MIN = 2000;      // borne basse DHT22
 
 // ---------------------------------------------------------------------------
 //  Actionneurs — LED RGB (LEDC) + relais
@@ -93,11 +104,22 @@ static constexpr BaseType_t CORE_NETWORK    = 1;
 static constexpr BaseType_t CORE_WEB        = 1;
 static constexpr BaseType_t CORE_STORAGE    = 1;
 
+static constexpr UBaseType_t PRIO_SAFETY     = 5;  // arrêt d'urgence (max)
 static constexpr UBaseType_t PRIO_NETWORK    = 4;
 static constexpr UBaseType_t PRIO_SENSORS    = 3;
+static constexpr UBaseType_t PRIO_CONTROL    = 3;  // régulation
 static constexpr UBaseType_t PRIO_WEB        = 2;
 static constexpr UBaseType_t PRIO_STORAGE    = 2;
+static constexpr UBaseType_t PRIO_TELEMETRY  = 2;
 static constexpr UBaseType_t PRIO_SUPERVISION = 1;
+
+// Cœurs / piles des opérations métier
+static constexpr BaseType_t CORE_CONTROL   = 0;   // avec l'acquisition
+static constexpr BaseType_t CORE_SAFETY    = 0;
+static constexpr BaseType_t CORE_TELEMETRY = 1;   // côté réseau
+static constexpr uint32_t STACK_CONTROL    = 4096;
+static constexpr uint32_t STACK_SAFETY     = 3072;
+static constexpr uint32_t STACK_TELEMETRY  = 4096;
 
 // Tailles de pile (octets) — à ajuster via uxTaskGetStackHighWaterMark
 static constexpr uint32_t STACK_SENSORS    = 4096;

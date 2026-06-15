@@ -14,6 +14,7 @@
 #include "runtime_config.h"
 #include "sensors/sensors.h"
 #include "actuators/actuators.h"
+#include "control/control.h"
 #include "network/network.h"
 #include "storage/storage.h"
 #include "web/web.h"
@@ -37,6 +38,7 @@ void setup() {
     // Init matériel / modules (avant de lancer les tâches qui les utilisent).
     if (!sensorsInit())     halt("sensorsInit");
     if (!actuatorsInit())   halt("actuatorsInit");
+    if (!controlInit())     halt("controlInit");
     if (!storageInit())     halt("storageInit");
     if (!networkInit())     halt("networkInit");
     if (!webInit())         halt("webInit");
@@ -53,6 +55,14 @@ void setup() {
                             nullptr, PRIO_WEB,         nullptr, CORE_WEB);
     xTaskCreatePinnedToCore(storageTask,     "StorageRepl", STACK_STORAGE,
                             nullptr, PRIO_STORAGE,     nullptr, CORE_STORAGE);
+
+    // --- Opérations métier (régulation, arrêt d'urgence, télémétrie) ---
+    xTaskCreatePinnedToCore(controlTask,     "Control",     STACK_CONTROL,
+                            nullptr, PRIO_CONTROL,     nullptr, CORE_CONTROL);
+    xTaskCreatePinnedToCore(safetyTask,      "Safety",      STACK_SAFETY,
+                            nullptr, PRIO_SAFETY,      nullptr, CORE_SAFETY);
+    xTaskCreatePinnedToCore(telemetryTask,   "Telemetry",   STACK_TELEMETRY,
+                            nullptr, PRIO_TELEMETRY,   nullptr, CORE_TELEMETRY);
 
     Serial.println("=== tâches lancées ===");
 }

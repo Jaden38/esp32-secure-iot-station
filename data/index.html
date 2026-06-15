@@ -5,26 +5,29 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ESP32 Secure IoT Station</title>
+  <title>Station IoT — Armoire technique</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>ESP32 Secure IoT Station</h1>
+    <h1>Supervision armoire technique</h1>
     <div id="conn">
       <span id="wifi" class="badge">Wi-Fi —</span>
       <span id="mqtt" class="badge">MQTT —</span>
+      <span id="estop" class="badge">—</span>
     </div>
   </header>
 
   <main>
-    <!-- Live capteurs -->
+    <!-- Live capteurs + état régulation -->
     <section id="live">
       <h2>Mesures live</h2>
       <ul>
         <li>Température : <span id="temp">—</span> °C</li>
         <li>Humidité : <span id="humidity">—</span> %</li>
         <li>Contact : <span id="contact">—</span></li>
+        <li>Mode : <span id="mode">—</span></li>
+        <li>Ventilation (relais) : <span id="relay">—</span></li>
       </ul>
     </section>
 
@@ -34,11 +37,38 @@
       <pre id="oled" class="oled">—</pre>
     </section>
 
-    <!-- Seuil réglable : remplace le potentiomètre absent -->
-    <section id="threshold-section">
-      <h2>Seuil (ex-potentiomètre)</h2>
-      <input type="range" id="threshold" min="0" max="4095" value="2048" />
-      <span id="threshold-val">2048</span>
+    <!-- Arrêt d'urgence -->
+    <section id="safety">
+      <h2>Arrêt d'urgence</h2>
+      <p>État : <strong id="estop-state">—</strong></p>
+      <button id="estop-reset">Réarmer</button>
+    </section>
+
+    <!-- Régulation -->
+    <section id="regulation">
+      <h2>Régulation</h2>
+      <form id="ctrl-form">
+        <label>Mode
+          <select name="mode">
+            <option value="auto">Auto</option>
+            <option value="manuel">Manuel</option>
+          </select>
+        </label>
+        <label>Seuil ON (°C) <input name="tempOn" type="number" step="0.5" /></label>
+        <label>Hystérésis (°C) <input name="hysteresis" type="number" step="0.5" /></label>
+        <label>Alerte humidité (%) <input name="humAlert" type="number" step="1" /></label>
+        <label>Acquisition (ms) <input name="acqPeriodMs" type="number" step="500" /></label>
+        <label>Publication (ms) <input name="pubPeriodMs" type="number" step="1000" /></label>
+        <button type="submit">Enregistrer</button>
+      </form>
+    </section>
+
+    <!-- Commande manuelle ventilation -->
+    <section id="actuators">
+      <h2>Ventilation (mode manuel)</h2>
+      <button id="relay-on">Forcer ON</button>
+      <button id="relay-off">Forcer OFF</button>
+      <p class="hint">Un ordre bascule la régulation en mode manuel.</p>
     </section>
 
     <!-- Configuration MQTT -->
@@ -52,14 +82,6 @@
         <label>Topic <input name="topic" /></label>
         <button type="submit">Enregistrer</button>
       </form>
-    </section>
-
-    <!-- Commande actionneurs -->
-    <section id="control">
-      <h2>Actionneurs</h2>
-      <button id="relay-on">Relais ON</button>
-      <button id="relay-off">Relais OFF</button>
-      <label>LED RGB <input type="color" id="led" value="#000000" /></label>
     </section>
   </main>
 

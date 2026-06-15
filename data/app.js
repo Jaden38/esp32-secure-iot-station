@@ -10,24 +10,17 @@ function ensureToken() {
   }
 }
 
-function authHeaders() {
-  return { "Authorization": "Bearer " + API_TOKEN };
-}
-
-function jsonHeaders() {
-  return { ...authHeaders(), "Content-Type": "application/json" };
-}
+function authHeaders() { return { "Authorization": "Bearer " + API_TOKEN }; }
+function jsonHeaders() { return { ...authHeaders(), "Content-Type": "application/json" }; }
 
 function setText(id, v) {
   const el = document.getElementById(id);
   if (el) el.textContent = (v ?? "—");
 }
-
 function setVal(name, v) {
-  const el = document.querySelector(`[name=${name}]`);
+  const el = document.querySelector(`#ctrl-form [name=${name}], #mqtt-form [name=${name}]`);
   if (el && document.activeElement !== el) el.value = v;
 }
-
 function setBadge(id, label, ok) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -36,9 +29,7 @@ function setBadge(id, label, ok) {
   el.classList.toggle("ko", !ok);
 }
 
-const thr = document.getElementById("threshold");
-
-// --- Mesures live + état connexion ---
+// --- Live + état régulation/sécurité ---
 async function refresh() {
   try {
     const r = await fetch("/api/live", { headers: authHeaders() });
@@ -47,13 +38,19 @@ async function refresh() {
     setText("temp", d.data?.temp);
     setText("humidity", d.data?.humidity);
     setText("contact", d.contact ? "fermé" : "ouvert");
+    setText("mode", d.mode);
+    setText("relay", d.relay ? "ON" : "OFF");
     setBadge("wifi", "Wi-Fi", d.wifi);
     setBadge("mqtt", "MQTT", d.mqtt);
-    // Synchronise le slider sur la valeur persistée (sauf pendant un réglage)
-    if (typeof d.threshold === "number" && thr && document.activeElement !== thr) {
-      thr.value = d.threshold;
-      setText("threshold-val", d.threshold);
+    // Badge + état arrêt d'urgence
+    const estop = !!d.estop;
+    const e = document.getElementById("estop");
+    if (e) {
+      e.textContent = estop ? "ARRÊT URGENCE" : "Sécurité OK";
+      e.classList.toggle("ko", estop);
+      e.classList.toggle("ok", !estop);
     }
+    setText("estop-state", estop ? "🔴 DÉCLENCHÉ" : "🟢 normal");
   } catch (e) { /* hors-ligne : on garde le dernier état */ }
 }
 
@@ -65,6 +62,51 @@ async function refreshOled() {
   } catch (e) { /* hors-ligne */ }
 }
 
+// --- Régulation : charge la config dans le formulaire ---
+async function loadControl() {
+  try {
+    const r = await fetch("/api/control", { headers: authHeaders() });
+    if (!r.ok) return;
+    const c = await r.json();
+    setVal("mode", c.mode);
+    setVal("tempOn", c.tempOn);
+    setVal("hysteresis", c.hysteresis);
+    setVal("humAlert", c.humAlert);
+    setVal("acqPeriodMs", c.acqPeriodMs);
+    setVal("pubPeriodMs", c.pubPeriodMs);
+  } catch (e) { /* ignore */ }
+}
+
+document.getElementById("ctrl-form")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = {
+    mode: fd.get("mode"),
+    tempOn: Number(fd.get("tempOn")),
+    hysteresis: Number(fd.get("hysteresis")),
+    humAlert: Number(fd.get("humAlert")),
+    acqPeriodMs: Number(fd.get("acqPeriodMs")),
+    pubPeriodMs: Number(fd.get("pubPeriodMs")),
+  };
+  await fetch("/api/control", { method: "POST", headers: jsonHeaders(), body: JSON.stringify(body) });
+  loadControl();
+});
+
+// --- Arrêt d'urgence : réarmement ---
+document.getElementById("estop-reset")?.addEventListener("click", async () => {
+  await fetch("/api/estop/reset", { method: "POST", headers: authHeaders() });
+  refresh();
+});
+
+// --- Commande manuelle ventilation (bascule en mode manuel) ---
+document.getElementById("relay-on")?.addEventListener("click", () => sendRelay(true));
+document.getElementById("relay-off")?.addEventListener("click", () => sendRelay(false));
+async function sendRelay(on) {
+  await fetch("/api/actuator", { method: "POST", headers: jsonHeaders(),
+    body: JSON.stringify({ type: "relay", on }) });
+  setTimeout(() => { refresh(); loadControl(); }, 300);
+}
+
 // --- Config MQTT ---
 async function loadConfig() {
   try {
@@ -74,9 +116,9 @@ async function loadConfig() {
     setVal("host", c.host);
     setVal("port", c.port);
     setVal("user", c.user);
-    const topic = document.querySelector("[name=topic]");
+    const topic = document.querySelector("#mqtt-form [name=topic]");
     if (topic) { topic.value = c.topic; topic.readOnly = true; }
-    const pass = document.querySelector("[name=pass]");
+    const pass = document.querySelector("#mqtt-form [name=pass]");
     if (pass) pass.placeholder = c.passSet ? "•••• (défini)" : "(vide)";
   } catch (e) { /* ignore */ }
 }
@@ -84,42 +126,14 @@ async function loadConfig() {
 document.getElementById("mqtt-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  const body = {
-    host: fd.get("host"),
-    port: Number(fd.get("port")),
-    user: fd.get("user"),
-    pass: fd.get("pass"),
-  };
+  const body = { host: fd.get("host"), port: Number(fd.get("port")),
+    user: fd.get("user"), pass: fd.get("pass") };
   await fetch("/api/config", { method: "POST", headers: jsonHeaders(), body: JSON.stringify(body) });
   loadConfig();
 });
 
-// --- Commandes actionneurs ---
-document.getElementById("relay-on")?.addEventListener("click", () => sendRelay(true));
-document.getElementById("relay-off")?.addEventListener("click", () => sendRelay(false));
-
-async function sendRelay(on) {
-  await fetch("/api/actuator", { method: "POST", headers: jsonHeaders(),
-    body: JSON.stringify({ type: "relay", on }) });
-}
-
-document.getElementById("led")?.addEventListener("change", async (e) => {
-  const hex = e.target.value;                      // #rrggbb
-  const r = parseInt(hex.substr(1, 2), 16);
-  const g = parseInt(hex.substr(3, 2), 16);
-  const b = parseInt(hex.substr(5, 2), 16);
-  await fetch("/api/actuator", { method: "POST", headers: jsonHeaders(),
-    body: JSON.stringify({ type: "led", r, g, b }) });
-});
-
-// --- Seuil (ex-potentiomètre) ---
-thr?.addEventListener("input", () => setText("threshold-val", thr.value));
-thr?.addEventListener("change", async () => {
-  await fetch("/api/threshold", { method: "POST", headers: jsonHeaders(),
-    body: JSON.stringify({ value: Number(thr.value) }) });
-});
-
 ensureToken();
+loadControl();
 loadConfig();
 setInterval(refresh, 1000);
 setInterval(refreshOled, 2000);

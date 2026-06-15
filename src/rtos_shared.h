@@ -26,6 +26,13 @@ extern EventGroupHandle_t netState;
 static constexpr EventBits_t BIT_WIFI_OK = (1 << 0);
 static constexpr EventBits_t BIT_MQTT_OK = (1 << 1);
 
+// --- État applicatif + arrêt d'urgence --------------------------------------
+extern EventGroupHandle_t appState;
+static constexpr EventBits_t BIT_ESTOP = (1 << 0);   // arrêt d'urgence actif
+
+// Sémaphore donné par l'ISR du contact -> réveille la tâche Safety (estop).
+extern SemaphoreHandle_t estopSem;
+
 // Crée toutes les primitives ci-dessus. À appeler dans setup() AVANT les tâches.
 // Retourne false si une allocation échoue (heap insuffisant).
 bool rtosInit();

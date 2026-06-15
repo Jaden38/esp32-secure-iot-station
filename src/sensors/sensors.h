@@ -26,3 +26,6 @@ void sensorTask(void* pv);
 
 // Dernier échantillon (cache thread-safe) — pour web/ & supervision/ (fan-out).
 SensorSample sensorsGetLatest();
+
+// État instantané du contact (lu par la tâche Safety pour le réarmement).
+bool sensorsContactClosed();

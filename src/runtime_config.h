@@ -11,9 +11,20 @@
 // Charge la config depuis NVS (défauts secrets.h si absente). À appeler dans setup().
 void runtimeConfigInit();
 
-// --- Seuil (ex-potentiomètre), accès thread-safe ---
-uint16_t runtimeGetThreshold();
-void     runtimeSetThreshold(uint16_t v);     // borné + persisté
+// --- Configuration de régulation métier (NVS), lue par les tâches métier ---
+struct ControlConfig {
+    uint16_t acqPeriodMs;    // période acquisition capteurs
+    uint16_t ctrlPeriodMs;   // période régulation relais/LED
+    uint16_t pubPeriodMs;    // période publication MQTT
+    float    tempOn;         // °C : ventilation ON au-dessus
+    float    hysteresis;     // °C : OFF sous (tempOn - hysteresis)
+    float    humAlert;       // % : alerte humidité au-dessus
+    uint8_t  mode;           // CtrlMode : MODE_AUTO / MODE_MANUEL
+    bool     relayManual;    // état relais désiré en mode MANUEL
+    bool     estopAutoReset; // true = estop se réarme à l'ouverture du contact
+};
+ControlConfig runtimeGetControl();
+void          runtimeSetControl(const ControlConfig& c);   // borné + persisté
 
 // --- Configuration MQTT (NVS) ---
 struct MqttConfig {

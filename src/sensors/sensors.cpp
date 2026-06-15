@@ -3,7 +3,6 @@
 #include "rtos_shared.h"
 #include "runtime_config.h"
 #include <DHTesp.h>
-#include <ArduinoJson.h>
 #include <math.h>
 #include <time.h>
 
@@ -36,6 +35,16 @@ static void IRAM_ATTR contactIsr() {
     s_lastEdgeMs    = now;
     s_contactClosed = (digitalRead(PIN_CONTACT) == LOW);
     s_contactEvents++;
+    // Contact fermé = appui sur l'arrêt d'urgence -> réveille la tâche Safety.
+    if (s_contactClosed && estopSem) {
+        BaseType_t hpw = pdFALSE;
+        xSemaphoreGiveFromISR(estopSem, &hpw);
+        portYIELD_FROM_ISR(hpw);
+    }
+}
+
+bool sensorsContactClosed() {
+    return s_contactClosed;
 }
 
 // ===========================================================================
@@ -111,7 +120,6 @@ void sensorTask(void* pv) {
         s.ts        = nowTs();
         s.temp      = round1(filterAvg(s_tBuf));
         s.humidity  = round1(filterAvg(s_hBuf));
-        s.threshold = runtimeGetThreshold();
         s.contact   = s_contactClosed;
         s.valid     = inRange && (s_fCount > 0);
 
@@ -123,24 +131,13 @@ void sensorTask(void* pv) {
 
         queueSendFresh(sensorDataQueue, &s);
 
-        // 5) Sérialisation au format JSON imposé -> queue de publication
-        if (s.valid) {
-            JsonDocument doc;                       // ArduinoJson 7
-            doc["device"] = DEVICE_ID;
-            doc["ts"]     = s.ts;
-            JsonObject data = doc["data"].to<JsonObject>();
-            data["temp"]     = s.temp;
-            data["humidity"] = s.humidity;
-
-            OutboundPayload p{};
-            p.ts = s.ts;
-            serializeJson(doc, p.json, sizeof(p.json));
-            queueSendFresh(outboundJsonQueue, &p);
-        } else {
-            log_w("[sensors] lecture invalide (status=%s) -> non publiée",
-                  dht.getStatusString());
+        // La publication MQTT est désormais assurée par telemetryTask (réseau),
+        // découplée du rythme d'acquisition (cf. pubPeriodMs).
+        if (!s.valid) {
+            log_w("[sensors] lecture invalide (status=%s)", dht.getStatusString());
         }
 
-        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(SENSOR_PERIOD_MS));
+        // Période d'acquisition configurable à chaud (>= 2 s pour le DHT22)
+        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(runtimeGetControl().acqPeriodMs));
     }
 }

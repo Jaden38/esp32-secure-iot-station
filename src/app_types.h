@@ -11,7 +11,6 @@ struct SensorSample {
     uint32_t ts;        // epoch (s) ou millis() si NTP indispo
     float    temp;      // °C   (filtré, DHT22)
     float    humidity;  // %    (filtré, DHT22)
-    uint16_t threshold; // 0..4095 — seuil courant (UI web, ex-potentiomètre)
     bool     contact;   // état des deux fils (true = en contact)
     bool     valid;     // false si valeur aberrante détectée
 };

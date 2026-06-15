@@ -4,6 +4,7 @@
 #include "runtime_config.h"
 #include "sensors/sensors.h"
 #include "actuators/actuators.h"
+#include "control/control.h"
 #include "security/security.h"
 #include "supervision/supervision.h"
 #include <ESPAsyncWebServer.h>
@@ -37,7 +38,6 @@ static void handleLive(AsyncWebServerRequest* req) {
     data["humidity"] = s.humidity;
     doc["valid"]     = s.valid;
     doc["contact"]   = s.contact;
-    doc["threshold"] = s.threshold;
     doc["ts"]        = s.ts;
 
     EventBits_t bits = xEventGroupGetBits(netState);
@@ -48,6 +48,12 @@ static void handleLive(AsyncWebServerRequest* req) {
     doc["relay"] = a.relayOn;
     JsonObject rgb = doc["rgb"].to<JsonObject>();
     rgb["r"] = a.r; rgb["g"] = a.g; rgb["b"] = a.b;
+
+    // État métier (régulation / arrêt d'urgence)
+    ControlConfig cfg = runtimeGetControl();
+    doc["mode"]   = (cfg.mode == MODE_MANUEL) ? "manuel" : "auto";
+    doc["tempOn"] = cfg.tempOn;
+    doc["estop"]  = (bool)(xEventGroupGetBits(appState) & BIT_ESTOP);
 
     doc["heap"]   = (uint32_t)ESP.getFreeHeap();
     doc["uptime"] = (uint32_t)(millis() / 1000);
@@ -80,6 +86,25 @@ static void handleConfigGet(AsyncWebServerRequest* req) {
     req->send(200, "application/json", out);
 }
 
+// GET /api/control : paramètres de régulation (seuils, périodes, mode).
+static void handleControlGet(AsyncWebServerRequest* req) {
+    if (!authed(req)) return;
+    ControlConfig c = runtimeGetControl();
+    JsonDocument doc;
+    doc["acqPeriodMs"]    = c.acqPeriodMs;
+    doc["ctrlPeriodMs"]   = c.ctrlPeriodMs;
+    doc["pubPeriodMs"]    = c.pubPeriodMs;
+    doc["tempOn"]         = c.tempOn;
+    doc["hysteresis"]     = c.hysteresis;
+    doc["humAlert"]       = c.humAlert;
+    doc["mode"]           = (c.mode == MODE_MANUEL) ? "manuel" : "auto";
+    doc["relayManual"]    = c.relayManual;
+    doc["estopAutoReset"] = c.estopAutoReset;
+    String out;
+    serializeJson(doc, out);
+    req->send(200, "application/json", out);
+}
+
 bool webInit() {
     // Fichiers statiques (UI) — non protégés, sinon la page ne se charge pas.
     server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
@@ -87,22 +112,14 @@ bool webInit() {
     server.on("/api/live",        HTTP_GET, handleLive);
     server.on("/api/supervision", HTTP_GET, handleSupervision);
     server.on("/api/config",      HTTP_GET, handleConfigGet);
+    server.on("/api/control",     HTTP_GET, handleControlGet);
 
-    // POST /api/threshold : {"value":0..4095}
-    server.addHandler(new AsyncCallbackJsonWebHandler(
-        "/api/threshold",
-        [](AsyncWebServerRequest* req, JsonVariant& json) {
-            if (!authed(req)) return;
-            if (!json["value"].is<int>()) {
-                req->send(400, "application/json", "{\"error\":\"bad value\"}");
-                return;
-            }
-            int v = json["value"].as<int>();
-            if (v < 0) v = 0;
-            if (v > THRESHOLD_MAX) v = THRESHOLD_MAX;
-            runtimeSetThreshold((uint16_t)v);
-            req->send(200, "application/json", "{\"ok\":true}");
-        }));
+    // POST /api/estop/reset : réarme l'arrêt d'urgence
+    server.on("/api/estop/reset", HTTP_POST, [](AsyncWebServerRequest* req) {
+        if (!authed(req)) return;
+        controlResetEstop();
+        req->send(200, "application/json", "{\"ok\":true}");
+    });
 
     // POST /api/actuator : {"type":"relay","on":true} | {"type":"led","r","g","b"}
     server.addHandler(new AsyncCallbackJsonWebHandler(
@@ -137,6 +154,28 @@ bool webInit() {
                 if (strlen(pw) > 0) strlcpy(c.pass, pw, sizeof(c.pass));
             }
             runtimeSetMqtt(c);     // persiste + déclenche la reconnexion MQTT
+            req->send(200, "application/json", "{\"ok\":true}");
+        }));
+
+    // POST /api/control : paramètres de régulation (champs optionnels)
+    server.addHandler(new AsyncCallbackJsonWebHandler(
+        "/api/control",
+        [](AsyncWebServerRequest* req, JsonVariant& json) {
+            if (!authed(req)) return;
+            ControlConfig c = runtimeGetControl();
+            if (json["acqPeriodMs"].is<int>())  c.acqPeriodMs  = json["acqPeriodMs"];
+            if (json["ctrlPeriodMs"].is<int>()) c.ctrlPeriodMs = json["ctrlPeriodMs"];
+            if (json["pubPeriodMs"].is<int>())  c.pubPeriodMs  = json["pubPeriodMs"];
+            if (json["tempOn"].is<float>())     c.tempOn       = json["tempOn"];
+            if (json["hysteresis"].is<float>()) c.hysteresis   = json["hysteresis"];
+            if (json["humAlert"].is<float>())   c.humAlert     = json["humAlert"];
+            if (json["relayManual"].is<bool>()) c.relayManual  = json["relayManual"];
+            if (json["estopAutoReset"].is<bool>()) c.estopAutoReset = json["estopAutoReset"];
+            if (json["mode"].is<const char*>()) {
+                const char* m = json["mode"].as<const char*>();
+                c.mode = (strcmp(m, "manuel") == 0) ? MODE_MANUEL : MODE_AUTO;
+            }
+            runtimeSetControl(c);
             req->send(200, "application/json", "{\"ok\":true}");
         }));
 

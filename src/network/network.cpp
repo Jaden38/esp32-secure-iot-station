@@ -6,9 +6,11 @@
 #include "security/security.h"
 #include "supervision/supervision.h"
 #include "runtime_config.h"
+#include "sensors/sensors.h"
 #include "secrets.h"        // WIFI_SSID / WIFI_PASSWORD (le MQTT vient du NVS)
 #include <WiFi.h>
 #include <MQTT.h>          // 256dpi/arduino-mqtt (lwmqtt)
+#include <ArduinoJson.h>
 #include <time.h>
 
 static WiFiClient  net;
@@ -127,8 +129,41 @@ void networkTask(void* pv) {
             ensureMqtt();
         }
         mqtt.loop();
-        pumpOutbound();
-        actuatorsDrainQueue(0);          // commandes web + MQTT-in
+        pumpOutbound();                  // publie ce que produit la télémétrie
         vTaskDelay(pdMS_TO_TICKS(20));   // jamais delay()
+    }
+}
+
+// --- Télémétrie : publie un instantané toutes les pubPeriodMs (découplé de
+//     l'acquisition). Inclut l'état métier (estop/relais/mode) en plus du
+//     format imposé {device, ts, data:{temp, humidity}}. -----------------------
+void telemetryTask(void* pv) {
+    (void)pv;
+    TickType_t lastWake = xTaskGetTickCount();
+    for (;;) {
+        ControlConfig cfg = runtimeGetControl();
+        SensorSample  s   = sensorsGetLatest();
+        if (s.valid) {
+            JsonDocument doc;
+            doc["device"] = DEVICE_ID;
+            doc["ts"]     = s.ts;
+            JsonObject data = doc["data"].to<JsonObject>();
+            data["temp"]     = s.temp;
+            data["humidity"] = s.humidity;
+            // Champs additionnels (n'altèrent pas les champs imposés)
+            doc["estop"] = (bool)(xEventGroupGetBits(appState) & BIT_ESTOP);
+            doc["relay"] = actuatorsGetState().relayOn;
+            doc["mode"]  = (cfg.mode == MODE_MANUEL) ? "manuel" : "auto";
+
+            OutboundPayload p{};
+            p.ts = s.ts;
+            serializeJson(doc, p.json, sizeof(p.json));
+            if (xQueueSend(outboundJsonQueue, &p, 0) != pdTRUE) {
+                OutboundPayload drop;
+                if (xQueueReceive(outboundJsonQueue, &drop, 0) == pdTRUE)
+                    xQueueSend(outboundJsonQueue, &p, 0);
+            }
+        }
+        vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(cfg.pubPeriodMs));
     }
 }

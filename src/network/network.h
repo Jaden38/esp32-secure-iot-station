@@ -16,3 +16,6 @@ bool networkInit();
 
 // Tâche FreeRTOS réseau (CORE_NETWORK, PRIO_NETWORK).
 void networkTask(void* pv);
+
+// Tâche Télémétrie : publication périodique découplée (pubPeriodMs).
+void telemetryTask(void* pv);

@@ -1,6 +1,7 @@
 #include "supervision.h"
 #include "config.h"
 #include "rtos_shared.h"
+#include "runtime_config.h"
 #include "sensors/sensors.h"
 #include <string.h>
 #include <stdio.h>
@@ -64,8 +65,10 @@ void supervisionTask(void* pv) {
         snprintf(lines[3], sizeof(lines[3]), "Pub lat: %lu ms",
                  (unsigned long)s_lastPublishLatencyMs);
         snprintf(lines[4], sizeof(lines[4]), "T:%.1f H:%.1f", s.temp, s.humidity);
-        snprintf(lines[5], sizeof(lines[5]), "Thr:%u Ct:%s",
-                 s.threshold, s.contact ? "shut" : "open");
+        const bool estop = xEventGroupGetBits(appState) & BIT_ESTOP;
+        snprintf(lines[5], sizeof(lines[5]), "Set:%.0fC %s",
+                 runtimeGetControl().tempOn,
+                 estop ? "*ESTOP*" : (s.contact ? "contact" : "ok"));
 
         // 1) Sortie série
         Serial.printf("[sup] up=%lus heap=%luKB %s lat=%lums T=%.1f H=%.1f\n",
