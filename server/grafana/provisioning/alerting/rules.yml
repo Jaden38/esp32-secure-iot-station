@@ -1,0 +1,76 @@
+# Alertes provisionnées (Grafana unified alerting).
+# Deux règles : absence de données capteur OU anomalie de température.
+# NB : pour recevoir une notification (mail, etc.) ajouter un "contact point"
+# dans Grafana > Alerting. Sans cela, l'alerte change quand même d'état (visible
+# dans Alerting > Alert rules), ce qui suffit à démontrer "alerte configurée".
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: esp32-iot
+    folder: IoT Alerts
+    interval: 1m
+    rules:
+      # --- 1) Absence de données : aucun message reçu depuis 10 min ----------
+      - uid: esp32-no-data
+        title: Absence de données capteur
+        condition: C
+        for: 5m
+        noDataState: Alerting
+        execErrState: Alerting
+        labels:
+          severity: critical
+        annotations:
+          summary: "Aucune donnée reçue de la station ESP32 depuis 10 minutes."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: influxdb_iot
+            model:
+              refId: A
+              query: |
+                from(bucket: "iot")
+                  |> range(start: -10m)
+                  |> filter(fn: (r) => r._measurement == "environment" and r._field == "temp")
+                  |> count()
+          - refId: C
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+
+      # --- 2) Anomalie capteur : température hors plage normale (> 45 °C) -----
+      - uid: esp32-temp-anomaly
+        title: Anomalie température
+        condition: C
+        for: 1m
+        noDataState: NoData
+        execErrState: Alerting
+        labels:
+          severity: warning
+        annotations:
+          summary: "Température anormale (> 45 °C) relevée par la station."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: influxdb_iot
+            model:
+              refId: A
+              query: |
+                from(bucket: "iot")
+                  |> range(start: -5m)
+                  |> filter(fn: (r) => r._measurement == "environment" and r._field == "temp")
+                  |> last()
+          - refId: C
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [45] }

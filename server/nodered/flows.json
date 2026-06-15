@@ -1,0 +1,51 @@
+[
+  { "id": "flow1", "type": "tab", "label": "Station IoT", "disabled": false, "info": "" },
+
+  { "id": "broker1", "type": "mqtt-broker", "name": "mosquitto", "broker": "mosquitto", "port": "1883", "clientid": "nodered", "autoConnect": true, "usetls": false, "protocolVersion": "4", "keepalive": "60", "cleansession": true, "birthTopic": "", "birthQos": "0", "birthPayload": "", "birthMsg": {}, "closeTopic": "", "closeQos": "0", "closePayload": "", "closeMsg": {}, "willTopic": "", "willQos": "0", "willPayload": "", "willMsg": {}, "userProps": "", "sessionExpiry": "" },
+
+  { "id": "mongo1", "type": "mongodb", "hostname": "mongodb", "topology": "direct", "connectOptions": "", "port": "27017", "db": "iot", "name": "mongo-iot" },
+
+  { "id": "influx1", "type": "influxdb", "hostname": "influxdb", "port": "8086", "protocol": "http", "database": "iot", "name": "influx-iot", "usetls": false, "influxdbVersion": "2.0", "url": "http://influxdb:8086", "rejectUnauthorized": true },
+
+  { "id": "uibase1", "type": "ui_base", "theme": { "name": "theme-light", "lightTheme": { "default": "#0094CE", "baseColor": "#0094CE", "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif", "edited": true, "reset": false }, "darkTheme": { "default": "#097479", "baseColor": "#097479", "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif", "edited": false }, "customTheme": { "name": "Untitled Theme 1", "default": "#4B7930", "baseColor": "#4B7930", "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif" }, "themeState": {}, "angularTheme": { "primary": "indigo", "accents": "blue", "warn": "red", "background": "grey" } }, "site": { "name": "ESP32 IoT Station", "hideToolbar": "false", "allowSwipe": "false", "lockMenu": "false", "allowTempTheme": "true", "dateFormat": "DD/MM/YYYY", "sizes": { "sx": 48, "sy": 48, "gx": 6, "gy": 6, "cx": 6, "cy": 6, "px": 0, "py": 0 } } },
+  { "id": "uitab1", "type": "ui_tab", "name": "Station", "icon": "dashboard", "order": 1, "disabled": false, "hidden": false },
+  { "id": "grpMes", "type": "ui_group", "name": "Mesures", "tab": "uitab1", "order": 1, "disp": true, "width": "12", "collapse": false, "className": "" },
+  { "id": "grpEtat", "type": "ui_group", "name": "État", "tab": "uitab1", "order": 2, "disp": true, "width": "6", "collapse": false, "className": "" },
+  { "id": "grpCmd", "type": "ui_group", "name": "Commandes", "tab": "uitab1", "order": 3, "disp": true, "width": "6", "collapse": false, "className": "" },
+
+  { "id": "n_mqttin", "type": "mqtt in", "z": "flow1", "name": "data", "topic": "campus/+/+/data", "qos": "1", "datatype": "json", "broker": "broker1", "nl": false, "rap": true, "rh": 0, "inputs": 0, "x": 110, "y": 120, "wires": [["n_validate"]] },
+
+  { "id": "n_validate", "type": "function", "z": "flow1", "name": "valider schéma", "func": "const p = msg.payload;\nif (p && typeof p.device === 'string' && typeof p.ts === 'number' &&\n    p.data && typeof p.data.temp === 'number' && typeof p.data.humidity === 'number') {\n    return msg;\n}\nnode.warn('payload invalide: ' + JSON.stringify(p));\nreturn null;", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 300, "y": 120, "wires": [["n_mongo", "n_toinflux", "n_temp", "n_hum"]] },
+
+  { "id": "n_mongo", "type": "mongodb out", "z": "flow1", "mongodb": "mongo1", "name": "MongoDB store", "collection": "measurements", "payonly": true, "upsert": false, "multi": false, "operation": "store", "x": 540, "y": 60, "wires": [] },
+
+  { "id": "n_toinflux", "type": "function", "z": "flow1", "name": "-> fields/tags", "func": "msg.payload = [\n    { temp: msg.payload.data.temp, humidity: msg.payload.data.humidity },\n    { device: msg.payload.device }\n];\nreturn msg;", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 540, "y": 120, "wires": [["n_influx"]] },
+
+  { "id": "n_influx", "type": "influxdb out", "z": "flow1", "influxdb": "influx1", "name": "InfluxDB", "measurement": "environment", "precision": "", "retentionPolicy": "", "database": "iot", "precisionV18FluxV20": "ms", "retentionPolicyV18Flux": "", "org": "esi", "bucket": "iot", "x": 760, "y": 120, "wires": [] },
+
+  { "id": "n_temp", "type": "function", "z": "flow1", "name": "temp", "func": "msg.payload = msg.payload.data.temp;\nmsg.topic = 'Température';\nreturn msg;", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 510, "y": 200, "wires": [["g_temp", "c_chart"]] },
+
+  { "id": "n_hum", "type": "function", "z": "flow1", "name": "humidité", "func": "msg.payload = msg.payload.data.humidity;\nmsg.topic = 'Humidité';\nreturn msg;", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 510, "y": 260, "wires": [["g_hum", "c_chart"]] },
+
+  { "id": "g_temp", "type": "ui_gauge", "z": "flow1", "name": "", "group": "grpMes", "order": 1, "width": "6", "height": "4", "gtype": "gage", "title": "Température", "label": "°C", "format": "{{value | number:1}}", "min": "0", "max": "50", "colors": ["#00b500", "#e6e600", "#ca3838"], "seg1": "", "seg2": "", "diff": false, "className": "", "x": 730, "y": 200, "wires": [] },
+
+  { "id": "g_hum", "type": "ui_gauge", "z": "flow1", "name": "", "group": "grpMes", "order": 2, "width": "6", "height": "4", "gtype": "gage", "title": "Humidité", "label": "%", "format": "{{value | number:1}}", "min": "0", "max": "100", "colors": ["#ca3838", "#00b500", "#0099ff"], "seg1": "", "seg2": "", "diff": false, "className": "", "x": 730, "y": 260, "wires": [] },
+
+  { "id": "c_chart", "type": "ui_chart", "z": "flow1", "name": "Historique", "group": "grpMes", "order": 3, "width": "12", "height": "6", "label": "Historique", "chartType": "line", "legend": "true", "xformat": "HH:mm:ss", "interpolate": "linear", "nodata": "", "dot": false, "ymin": "", "ymax": "", "removeOlder": "1", "removeOlderPoints": "", "removeOlderUnit": "3600", "cutout": 0, "useOneColor": false, "useUTC": false, "colors": ["#1f77b4", "#aec7e8", "#ff7f0e", "#2ca02c", "#98df8a"], "outputs": 1, "useDifferentColor": false, "className": "", "x": 730, "y": 320, "wires": [[]] },
+
+  { "id": "n_status", "type": "mqtt in", "z": "flow1", "name": "status (LWT)", "topic": "campus/+/+/status", "qos": "1", "datatype": "utf8", "broker": "broker1", "nl": false, "rap": true, "rh": 0, "inputs": 0, "x": 120, "y": 360, "wires": [["t_status"]] },
+
+  { "id": "t_status", "type": "ui_text", "z": "flow1", "group": "grpEtat", "order": 1, "width": "6", "height": "1", "name": "", "label": "Station", "format": "{{msg.payload}}", "layout": "row-spread", "className": "", "x": 330, "y": 360, "wires": [] },
+
+  { "id": "sw_relay", "type": "ui_switch", "z": "flow1", "name": "", "label": "Relais", "tooltip": "", "group": "grpCmd", "order": 1, "width": "6", "height": "1", "passthru": true, "decouple": "false", "topic": "", "topicType": "str", "style": "", "onvalue": "true", "onvalueType": "bool", "offvalue": "false", "offvalueType": "bool", "onicon": "", "officon": "", "oncolor": "", "offcolor": "", "animate": false, "className": "", "x": 130, "y": 440, "wires": [["f_relay"]] },
+
+  { "id": "f_relay", "type": "function", "z": "flow1", "name": "cmd relais", "func": "msg.payload = { type: 'relay', on: msg.payload };\nreturn msg;", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 320, "y": 440, "wires": [["n_cmdout"]] },
+
+  { "id": "sl_r", "type": "ui_slider", "z": "flow1", "name": "R", "label": "R", "tooltip": "", "group": "grpCmd", "order": 2, "width": "6", "height": "1", "passthru": false, "outs": "end", "topic": "r", "topicType": "str", "min": 0, "max": "255", "step": 1, "className": "", "x": 130, "y": 500, "wires": [["f_rgb"]] },
+  { "id": "sl_g", "type": "ui_slider", "z": "flow1", "name": "G", "label": "G", "tooltip": "", "group": "grpCmd", "order": 3, "width": "6", "height": "1", "passthru": false, "outs": "end", "topic": "g", "topicType": "str", "min": 0, "max": "255", "step": 1, "className": "", "x": 130, "y": 540, "wires": [["f_rgb"]] },
+  { "id": "sl_b", "type": "ui_slider", "z": "flow1", "name": "B", "label": "B", "tooltip": "", "group": "grpCmd", "order": 4, "width": "6", "height": "1", "passthru": false, "outs": "end", "topic": "b", "topicType": "str", "min": 0, "max": "255", "step": 1, "className": "", "x": 130, "y": 580, "wires": [["f_rgb"]] },
+
+  { "id": "f_rgb", "type": "function", "z": "flow1", "name": "cmd LED", "func": "const c = context.get('rgb') || { r: 0, g: 0, b: 0 };\nif (msg.topic === 'r') c.r = msg.payload;\nelse if (msg.topic === 'g') c.g = msg.payload;\nelse if (msg.topic === 'b') c.b = msg.payload;\ncontext.set('rgb', c);\nmsg.payload = { type: 'led', r: c.r, g: c.g, b: c.b };\nreturn msg;", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 320, "y": 540, "wires": [["n_cmdout"]] },
+
+  { "id": "n_cmdout", "type": "mqtt out", "z": "flow1", "name": "cmd", "topic": "campus/g1/ESP32-1/cmd", "qos": "1", "retain": "false", "respTopic": "", "contentType": "", "userProps": "", "correl": "", "expiry": "", "broker": "broker1", "x": 550, "y": 490, "wires": [] }
+]
