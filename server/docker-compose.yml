@@ -17,10 +17,12 @@ services:
     environment:
       - MQTT_USER=iot
       - MQTT_PASS=change-me
-    # Crée le fichier de mots de passe (haché) au démarrage puis lance le broker.
+    # (Re)crée le fichier de mots de passe haché au démarrage puis lance le
+    # broker. Le rm -f évite l'erreur "File exists" de mosquitto_passwd -c
+    # quand le fichier persiste déjà (bind-mount) au redémarrage.
     command: >
-      sh -c "mosquitto_passwd -b -c /mosquitto/config/passwd $$MQTT_USER $$MQTT_PASS &&
-             chmod 0700 /mosquitto/config/passwd &&
+      sh -c "rm -f /mosquitto/config/passwd &&
+             mosquitto_passwd -b -c /mosquitto/config/passwd $$MQTT_USER $$MQTT_PASS &&
              mosquitto -c /mosquitto/config/mosquitto.conf"
     volumes:
       - ./mosquitto/config:/mosquitto/config
