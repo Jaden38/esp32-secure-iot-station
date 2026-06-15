@@ -67,15 +67,6 @@ flowchart LR
     WIFI -.->|MQTT/HTTP| NET((Réseau))
 ```
 
-> **À propos du « CPU Xtensa LX6 »**
-> L'ESP32 (modèle classique, ex. ESP32-WROOM-32) embarque un processeur **Xtensa LX6** conçu par **Tensilica / Cadence**. C'est une architecture 32 bits **configurable** (Tensilica vend des cœurs « à la carte »), spécialement adaptée au DSP et au calcul embarqué.
-> Le SoC est **dual-core** : deux cœurs Xtensa LX6 identiques cadencés jusqu'à **240 MHz**, exposés à FreeRTOS comme **Cœur 0 (PRO_CPU)** et **Cœur 1 (APP_CPU)**.
-> - **Cœur 0 (PRO_CPU)** héberge par défaut la stack Wi-Fi / Bluetooth / IP de l'IDF. Mais avec Arduino-ESP32, **le sketch (`setup()` / `loop()`) tourne sur le Cœur 1 (APP_CPU)** et la stack réseau garde le Cœur 0.
-> - C'est pour cette raison qu'on **épingle (`xTaskCreatePinnedToCore`) `NetworkMQTT` sur le Cœur 1** (à côté de la stack réseau Arduino) et qu'on isole l'**acquisition capteurs** sur le Cœur 0 pour qu'elle ne soit pas perturbée par les interruptions Wi-Fi.
-> - Le runtime est **FreeRTOS SMP** (ordonnanceur multi-cœurs préemptif), c'est pour ça que `vTaskDelay()` est obligatoire à la place de `delay()` : `delay()` Arduino fait un yield FreeRTOS, mais sur du code multitâche bien écrit on veut être explicite.
->
-> ℹ️ Sur les modèles plus récents (ESP32-S3, ESP32-C3, ESP32-C6, ESP32-H2), Espressif est passé à des cœurs **Xtensa LX7** ou **RISC-V**. Le code FreeRTOS de ce projet reste portable sur ces variantes moyennant un changement de `board` dans `platformio.ini`.
-
 ## Architecture logicielle (FreeRTOS)
 
 ```mermaid
