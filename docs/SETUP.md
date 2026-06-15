@@ -26,21 +26,88 @@ carte seule (sans serveur, elle bufferise en offline).
 
 ---
 
-## 1. Câblage matériel
+## 1. Câblage matériel (pas à pas)
 
-Détail complet (schéma ASCII + BOM) dans le [`README`](../README.md#schéma-de-câblage-breadboard).
-Résumé :
+⚠️ **ESP32 débranché (aucun USB) pendant tout le câblage.**
+
+Breadboard : colonnes **0→60**, lignes **A-E** (banc haut) / **F-J** (banc bas)
+séparées par la rainure. Rails : **+ haut = 3,3 V**, **− haut = GND**, **+ bas = 5 V**.
+
+> 🛑 **PIÈGE N°1 — breadboard coupée en deux !**
+> Sur beaucoup de grandes breadboards, **les rails d'alimentation ne sont PAS
+> continus** : il y a une **coupure au milieu** (vers la colonne ~30, parfois
+> visible par une interruption du trait coloré). Les deux moitiés ne sont pas
+> reliées. Résultat classique : le DHT (côté gauche, près de l'ESP) marche, mais
+> **les LEDs/relais (côté droit) restent morts**.
+> **➡️ Ajoute 2 cavaliers qui pontent la coupure** — un sur le rail **+** et un sur
+> le rail **−** — pour relier la moitié gauche à la moitié droite. (Et idem pour le
+> rail **+ bas 5 V** si le relais est à droite.) **Fais-le en premier.**
+
+### Table de connexions (netlist)
 
 | Composant | Broche → ESP32 | Résistance |
 |---|---|---|
-| DHT22 VCC / DATA / GND | 3V3 / **GPIO4** / GND | **10 kΩ** DATA↔3V3 (sauf module intégré) |
-| LED rouge/verte/bleue | **GPIO25 / 26 / 33** → anode | **470 Ω** par LED |
-| LEDs cathode | GND | — |
+| DHT22 VCC / DATA / GND | 3V3 / **GPIO4** / GND | **10 kΩ** DATA↔3V3 *(sauf module 3 broches qui l'intègre)* |
+| LED **rouge** (alarme) | anode → **GPIO25** | **470 Ω** en série |
+| LED **orange** (actif) | anode → **GPIO26** | **470 Ω** en série |
+| LED **verte** (nominal) | anode → **GPIO33** | **470 Ω** en série |
+| LEDs (cathode) | → GND (rail −) | — |
 | Relais IN / VCC / GND | **GPIO32** / 5V(VIN) / GND | — |
 | Contact 2 fils | **GPIO27** et GND | aucune (pull-up interne) |
 
-> Sans DHT22 branché, les lectures sont marquées invalides et **rien n'est
-> publié** : pour une démo serveur seule, utilise l'injecteur MQTT (§8).
+### Étapes (ESP32 hors breadboard, relié par cavaliers en ligne A)
+
+**A. Rails**
+1. **Pont central** : 1 cavalier sur le rail **+ haut**, 1 sur le rail **− haut** (cf. piège n°1).
+2. Câble **3,3 V** : ESP **3V3** → rail **+ haut**.
+3. Câble **5 V** : ESP **VIN/5V** → rail **+ bas**.
+4. Câble **GND** : ESP **GND** → rail **− haut**.
+
+**B. DHT22** (module 3 broches `− / + / out`)
+5. Enfonce le DHT22 : `−`→**E10**, `+`→**E11**, `out`→**E12**.
+6. **A10** → rail **− haut** (GND) · **A11** → rail **+ haut** (3,3 V) · ESP **GPIO4** → **A12**.
+
+**C. Relais** (`VCC / GND / IN`)
+7. Enfonce le relais : `VCC`→**E20**, `GND`→**E21**, `IN`→**E22**.
+8. **A20** → rail **+ bas** (5 V) · **A21** → rail **− haut** (GND) · ESP **GPIO32** → **A22**.
+
+**D. LED rouge** (alarme)
+9. Résistance **470 Ω** : **B25 ↔ B30**.
+10. LED rouge : **anode (patte longue)** → **E30**, **cathode (patte courte)** → **E31**.
+11. ESP **GPIO25** → **A25** · **A31** → rail **− haut** (GND).
+
+**E. LED orange** (actif)
+12. Résistance **470 Ω** : **B35 ↔ B40**.
+13. LED orange : anode → **E40**, cathode → **E41**.
+14. ESP **GPIO26** → **A35** · **A41** → rail **− haut**.
+
+**F. LED verte** (nominal)
+15. Résistance **470 Ω** : **B45 ↔ B50**.
+16. LED verte : anode → **E50**, cathode → **E51**.
+17. ESP **GPIO33** → **A45** · **A51** → rail **− haut**.
+
+**G. Contact 2 fils** (arrêt d'urgence)
+18. ESP **GPIO27** → **A55**.
+19. Fil n°1 : **B55** → bout libre. Fil n°2 : rail **− haut** (GND) → bout libre.
+20. Toucher les 2 bouts ensemble = contact fermé → arrêt d'urgence.
+
+**H. Vérifs AVANT l'USB**
+21. **Pont central** des rails bien en place (piège n°1).
+22. Chaque **résistance** enjambe **2 colonnes différentes** (25↔30 / 35↔40 / 45↔50) — sinon court-circuitée.
+23. **Anode** (patte longue) côté résistance, **cathode** (patte courte) côté GND.
+24. Aucun fil ne relie le **5 V** au **3,3 V** ni à une GPIO.
+25. Branche l'USB et **touche l'ESP ~15 s** : il doit rester **froid**. S'il chauffe → débranche et revérifie (souvent VCC/GND inversés).
+
+### BOM résistances
+- **3 × 470 Ω** (limitation LEDs) · **1 × 10 kΩ** (pull-up DHT22, si non intégré).
+
+> **Pièges fréquents** : ① rail coupé au milieu (ci-dessus) ; ② LED à l'envers
+> (ne s'allume jamais) ; ③ contact câblé sur la mauvaise GPIO (doit être **27**) ;
+> ④ module relais **actif-haut** alors que le firmware est actif-bas → passer
+> `RELAY_ACTIVE_LOW=false` dans `config.h`.
+>
+> Sans DHT22 branché, les lectures sont invalides et **rien n'est publié** : pour
+> une démo serveur seule, utilise l'injecteur MQTT (§8).
 
 ---
 
