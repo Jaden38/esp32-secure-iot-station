@@ -28,10 +28,18 @@ static void onMqttMessage(String& topic, String& payload) {
 
 // --- Wi-Fi : connexion + reconnexion auto (non bloquant) ---------------------
 static void ensureWifi() {
+    static bool wasUp = false;
     if (WiFi.status() == WL_CONNECTED) {
+        if (!wasUp) {        // transition -> affiche l'IP (utile pour l'UI web)
+            wasUp = true;
+            log_i("[net] Wi-Fi OK — IP: %s (UI web: http://%s/)",
+                  WiFi.localIP().toString().c_str(),
+                  WiFi.localIP().toString().c_str());
+        }
         xEventGroupSetBits(netState, BIT_WIFI_OK);
         return;
     }
+    wasUp = false;
     xEventGroupClearBits(netState, BIT_WIFI_OK | BIT_MQTT_OK);
 
     static uint32_t last = 0;
