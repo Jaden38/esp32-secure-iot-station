@@ -56,6 +56,8 @@ bool storageAppend(const OutboundPayload& p) {
         f.close();
         if (size > STORAGE_MAX_BYTES) compactLocked();
         ok = true;
+        log_w("[storage] MQTT hors-ligne -> mesure bufferisée (buffer ~%u o)",
+              (unsigned)size);
     }
     xSemaphoreGive(fsMutex);
     return ok;
@@ -76,6 +78,7 @@ static void replayBuffer() {
     if (!f) { xSemaphoreGive(fsMutex); return; }
 
     bool reachedEnd = true;
+    int  n = 0;
     while (f.available()) {
         String line = f.readStringUntil('\n');
         line.trim();
@@ -89,10 +92,15 @@ static void replayBuffer() {
             reachedEnd = false;
             break;
         }
+        n++;
     }
     f.close();
     if (reachedEnd) LittleFS.remove(REPLAY_PATH);   // tout réinjecté
 
+    if (n > 0) {
+        log_i("[storage] reconnecté -> replay de %d mesure(s)%s", n,
+              reachedEnd ? "" : " (partiel, reste à rejouer)");
+    }
     xSemaphoreGive(fsMutex);
 }
 
