@@ -60,60 +60,11 @@ flowchart LR
 8 tâches, communication par queues / mutex / event-groups (aucun état mutable
 partagé sans protection).
 
-```mermaid
-flowchart TB
-    subgraph CORE0["Cœur 0"]
-        TSENS["SensorAcquisition (p3)"]
-        TCTRL["Control / régulation (p3)"]
-        TSAFE["Safety / arrêt urgence (p5)"]
-        TSUP["Supervision (p1)"]
-    end
-    subgraph CORE1["Cœur 1"]
-        TNET["NetworkMQTT (p4)"]
-        TTEL["Telemetry (p2)"]
-        TWEB["WebServer (p2)"]
-        TSTO["StorageReplay (p2)"]
-    end
-
-    CACHE["cache latestSample (mutex)"]
-    QCMD[["actuatorCmdQueue"]]
-    QOUT[["outboundJsonQueue"]]
-    EVNET{{"netState : WIFI_OK / MQTT_OK"}}
-    EVAPP{{"appState : ESTOP"}}
-    SEM(("estopSem"))
-
-    TSENS --> CACHE
-    CACHE --> TCTRL & TTEL & TWEB & TSUP
-    TSENS -. ISR contact .-> SEM --> TSAFE
-    TSAFE -->|set| EVAPP --> TCTRL
-    TCTRL -->|relais + LED| ACT["Actuators"]
-    QCMD --> TCTRL
-    TWEB --> QCMD
-    TNET -->|cmd MQTT in| QCMD
-    TTEL --> QOUT --> TNET
-    TNET -->|si MQTT KO| TSTO
-    TSTO -->|replay| QOUT
-    TNET -.->|set/clear| EVNET
-```
+![Architecture logicielle : tâches, cœurs, queues, mutex, event-groups](images/archi-logicielle.png)
 
 ## Flux de données end-to-end
 
-```mermaid
-flowchart LR
-    SENS["DHT22 / contact"] --> ACQ["Acquisition<br/>filtrage + sanity"]
-    ACQ --> CTRL["Régulation<br/>hystérésis -> relais + LED"]
-    ACQ --> TEL["Télémétrie (10 s)"]
-    TEL --> RT{"MQTT ?"}
-    RT -->|oui| PUB["Publish QoS 1<br/>campus/g/dev/data"]
-    RT -->|non| BUF["LittleFS buffer.jsonl"]
-    BUF -.->|reco| PUB
-    PUB --> BRK["Broker (auth)"] --> NR["Node-RED<br/>validation"]
-    NR --> MONGO[("MongoDB")]
-    NR --> INFLUX[("InfluxDB")] --> GRAF["Grafana + alertes"]
-    NR --> DASH["Dashboard"]
-    DASH -->|cmd| BRK -->|.../cmd| CTRL
-    WEB["UI web + token"] --> API["/api/*"] --> CTRL
-```
+![Flux de données end-to-end](images/flux-end-to-end.png)
 
 ## Structure du projet
 

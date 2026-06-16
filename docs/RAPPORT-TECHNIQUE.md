@@ -19,7 +19,8 @@ remonter ses données à un serveur central, et **continuer à fonctionner même
 réseau coupé**. L'enjeu transverse est la **fiabilité** (autonomie en cas de
 panne) et la **sécurité** (auth + validation des entrées).
 
-> 📷 *Placeholder : photo du montage réel (ESP32 + DHT22 + 3 LEDs + relais + contact).*
+![Montage réel : ESP32 + DHT22 + 3 LEDs + relais + contact](images/montage.png)
+*Figure 1 : montage réel de la station sur breadboard.*
 
 ---
 
@@ -31,8 +32,8 @@ Le firmware respecte le découpage modulaire imposé (`src/sensors`, `actuators`
 **8 tâches FreeRTOS** épinglées sur les 2 cœurs, communiquant par **queues**,
 **mutex** et **event-groups** : aucun état mutable partagé sans protection.
 
-> 📷 *Placeholder : diagramme d'architecture logicielle (tâches / cœurs /
-> queues / mutex / event-groups). Source : diagramme Mermaid de `SPEC-TECHNIQUE.md`.*
+![Architecture logicielle : tâches, cœurs, queues, mutex, event-groups](images/archi-logicielle.png)
+*Figure 2 : répartition des 8 tâches FreeRTOS sur les 2 cœurs et leurs canaux de communication.*
 
 | Tâche | Prio | Cœur | Rôle |
 |---|---|---|---|
@@ -80,7 +81,8 @@ d'état exclusifs : 🟢 nominal · 🟠 ventilation active ou humidité haute �
 🔴 défaut capteur / arrêt d'urgence (clignotant). Les seuils et périodes sont
 **modifiables à chaud** via l'UI web et **persistés en NVS**.
 
-> 📷 *Placeholder : capture de l'interface web (live + régulation + OLED virtuel).*
+![Interface web embarquée](images/ui-web.png)
+*Figure 3 : interface web embarquée (mesures live, régulation, OLED virtuel).*
 
 ---
 
@@ -101,8 +103,9 @@ reconnexion, le buffer est **renommé `.replay`** (les nouvelles mesures vont da
 un buffer neuf → zéro perte) puis **rejoué** en QoS 1, garantissant une livraison
 *at-least-once*.
 
-> 📷 *Placeholder : logs du scénario de panne : `MQTT hors-ligne -> mesure
-> bufferisée`, puis `reconnecté -> replay de N mesure(s)`, puis arrivée dans MongoDB.*
+![Bufferisation offline puis replay à la reconnexion](images/offline-replay.png)
+*Figure 4 : scénario de panne — mesures bufferisées hors-ligne puis rejouées à la
+reconnexion (livraison sans perte).*
 
 ---
 
@@ -124,7 +127,8 @@ La tâche `Supervision` affiche **périodiquement** (série + **OLED virtuel** w
 `publish`). Empreinte mesurée : **RAM ≈ 15 %**, **Flash ≈ 38 %** (partition
 `huge_app.csv`, 3 Mo). Horloges : CPU 240 MHz, PWM LEDs 5 kHz, tick FreeRTOS 1 kHz.
 
-> 📷 *Placeholder : sortie série de supervision (heap / uptime / latence).*
+![Sortie série de supervision](images/supervision-serie.png)
+*Figure 5 : supervision périodique sur le port série (heap, uptime, latence MQTT).*
 
 ---
 
@@ -139,8 +143,11 @@ Mosquitto (auth), MongoDB, Node-RED, InfluxDB, Grafana.
 mesures, actionneurs, métrique de robustesse) avec **alerte** sur absence de
 données / anomalie capteur.
 
-> 📷 *Placeholder : dashboard Node-RED.*
-> 📷 *Placeholder : dashboard Grafana + alerte configurée.*
+![Dashboard Node-RED](images/dashboard-nodered.png)
+*Figure 6 : dashboard Node-RED (jauges, historique, commandes).*
+
+![Dashboard Grafana avec alerte](images/dashboard-grafana.png)
+*Figure 7 : dashboard Grafana (historisation InfluxDB) avec alerte configurée.*
 
 ---
 
@@ -187,8 +194,8 @@ U8g2 conservé sous `HAS_OLED`).
 - **Multi-stations** : le contrat de topic (`campus/<groupe>/<deviceID>`) et le
   flow Node-RED (wildcards `+`) supportent déjà la montée en charge.
 
-> 📷 *Placeholder : diagramme de flux end-to-end capteur → MQTT → Node-RED →
-> bases → dashboards. Source : diagramme Mermaid de `SPEC-TECHNIQUE.md`.*
+![Flux de données end-to-end](images/flux-end-to-end.png)
+*Figure 8 : flux end-to-end capteur → MQTT → Node-RED → bases → dashboards.*
 
 ---
 
