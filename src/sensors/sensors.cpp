@@ -79,16 +79,6 @@ static uint32_t nowTs() {
     return (now > 1700000000) ? (uint32_t)now : (uint32_t)(millis() / 1000);
 }
 
-// Envoi non bloquant avec éviction du plus ancien si la queue est pleine
-// (on privilégie la donnée fraîche pour le "live").
-template <typename T>
-static void queueSendFresh(QueueHandle_t q, const T* item) {
-    if (xQueueSend(q, item, 0) != pdTRUE) {
-        T dropped;
-        if (xQueueReceive(q, &dropped, 0) == pdTRUE) xQueueSend(q, item, 0);
-    }
-}
-
 bool sensorsInit() {
     s_latestMutex = xSemaphoreCreateMutex();
     dht.setup(PIN_DHT, DHTesp::DHT22);
@@ -127,16 +117,14 @@ void sensorTask(void* pv) {
         s.contact   = s_contactClosed;
         s.valid     = inRange && (s_fCount > 0);
 
-        // Met à jour le cache "live" (lu par web/ & supervision/)
+        // Met à jour le cache "live" (lu par web/, supervision/, control/, telemetry/)
         if (s_latestMutex && xSemaphoreTake(s_latestMutex, pdMS_TO_TICKS(20)) == pdTRUE) {
             s_latest = s;
             xSemaphoreGive(s_latestMutex);
         }
 
-        queueSendFresh(sensorDataQueue, &s);
-
-        // La publication MQTT est désormais assurée par telemetryTask (réseau),
-        // découplée du rythme d'acquisition (cf. pubPeriodMs).
+        // La publication MQTT est assurée par telemetryTask (réseau), découplée
+        // du rythme d'acquisition (cf. pubPeriodMs).
         if (!s.valid) {
             log_w("[sensors] lecture invalide (status=%s)", dht.getStatusString());
         }

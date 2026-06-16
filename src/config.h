@@ -131,6 +131,5 @@ static constexpr uint32_t STACK_SUPERVISION = 3072;
 // ---------------------------------------------------------------------------
 //  Tailles de queues (cf. README)
 // ---------------------------------------------------------------------------
-static constexpr size_t Q_SENSOR_LEN   = 16;
 static constexpr size_t Q_CMD_LEN      = 8;
 static constexpr size_t Q_OUTBOUND_LEN = 32;

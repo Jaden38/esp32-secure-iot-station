@@ -13,9 +13,8 @@
 #include "app_types.h"
 
 // --- Queues -----------------------------------------------------------------
-extern QueueHandle_t sensorDataQueue;    // SensorSample   x Q_SENSOR_LEN
-extern QueueHandle_t actuatorCmdQueue;   // ActuatorCmd    x Q_CMD_LEN
-extern QueueHandle_t outboundJsonQueue;  // OutboundPayload x Q_OUTBOUND_LEN
+extern QueueHandle_t actuatorCmdQueue;   // ActuatorCmd    x Q_CMD_LEN  (web/MQTT -> régulation)
+extern QueueHandle_t outboundJsonQueue;  // OutboundPayload x Q_OUTBOUND_LEN (télémétrie -> réseau)
 
 // --- Mutex (bus partagés) ---------------------------------------------------
 extern SemaphoreHandle_t i2cMutex;       // OLED (seul périph. I²C)

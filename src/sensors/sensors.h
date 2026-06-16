@@ -6,8 +6,7 @@
 //      (potentiomètre absent -> seuil réglé depuis l'UI web)
 //    - filtrage (moyenne glissante, FILTER_WINDOW)
 //    - timestamp + détection valeurs aberrantes (bornes config.h)
-//    - push SensorSample -> sensorDataQueue
-//    - format JSON imposé -> outboundJsonQueue
+//    - publication du dernier échantillon dans un cache thread-safe (mutex)
 //
 //  Choix lib (figé tâche #2) : DHTesp (beegee-tokyo). Comparée à l'approche RMT
 //  non-bloquante (dhtESP32-rmt / esp32DHT) : DHTesp est éprouvée et son unique

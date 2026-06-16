@@ -9,6 +9,6 @@
 bool webInit();
 
 // Tâche FreeRTOS serveur web (CORE_WEB, PRIO_WEB).
-// NB: AsyncWebServer est piloté par callbacks ; la tâche surveille l'état /
-// rafraîchit le cache live capteurs depuis sensorDataQueue.
+// NB: AsyncWebServer est piloté par callbacks ; la tâche ne fait que surveiller
+// l'état (les mesures live sont lues à la demande via sensorsGetLatest()).
 void webTask(void* pv);
