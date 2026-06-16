@@ -23,7 +23,7 @@ Empreinte : **RAM ~15 %**, **Flash ~38 %** (sur 3 Mo).
 
 ## Architecture matérielle
 
-![Architecture matérielle : ESP32 et périphériques](images/archi-logicielle.png)
+![Architecture matérielle : ESP32 et périphériques](images/archi-materielle.png)
 
 > OLED SSD1306 et potentiomètre absents → remplacés en logiciel (OLED virtuel
 > web + seuil web). DHT22 en 1-wire → **aucun périphérique I²C requis** par défaut.
@@ -33,41 +33,7 @@ Empreinte : **RAM ~15 %**, **Flash ~38 %** (sur 3 Mo).
 8 tâches, communication par queues / mutex / event-groups (aucun état mutable
 partagé sans protection).
 
-```mermaid
-flowchart TB
-    subgraph CORE0["Cœur 0"]
-        TSENS["SensorAcquisition (p3)"]
-        TCTRL["Control / régulation (p3)"]
-        TSAFE["Safety / arrêt urgence (p5)"]
-        TSUP["Supervision (p1)"]
-    end
-    subgraph CORE1["Cœur 1"]
-        TNET["NetworkMQTT (p4)"]
-        TTEL["Telemetry (p2)"]
-        TWEB["WebServer (p2)"]
-        TSTO["StorageReplay (p2)"]
-    end
-
-    CACHE["cache latestSample (mutex)"]
-    QCMD[["actuatorCmdQueue"]]
-    QOUT[["outboundJsonQueue"]]
-    EVNET{{"netState : WIFI_OK / MQTT_OK"}}
-    EVAPP{{"appState : ESTOP"}}
-    SEM(("estopSem"))
-
-    TSENS --> CACHE
-    CACHE --> TCTRL & TTEL & TWEB & TSUP
-    TSENS -. ISR contact .-> SEM --> TSAFE
-    TSAFE -->|set| EVAPP --> TCTRL
-    TCTRL -->|relais + LED| ACT["Actuators"]
-    QCMD --> TCTRL
-    TWEB --> QCMD
-    TNET -->|cmd MQTT in| QCMD
-    TTEL --> QOUT --> TNET
-    TNET -->|si MQTT KO| TSTO
-    TSTO -->|replay| QOUT
-    TNET -.->|set/clear| EVNET
-```
+![Architecture logicielle : tâches, cœurs, queues, mutex, event-groups](images/archi-logicielle.png)
 
 ## Flux de données end-to-end
 
