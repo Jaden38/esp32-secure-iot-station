@@ -1,6 +1,5 @@
 #include "actuators.h"
 #include "config.h"
-#include "rtos_shared.h"
 
 // LED RGB pilotée par LEDC (API core 3.x : ledcAttach / ledcWrite).
 // Relais sur GPIO simple, polarité configurable (RELAY_ACTIVE_LOW).
@@ -53,15 +52,4 @@ void actuatorsApply(const ActuatorCmd& cmd) {
 
 ActuatorState actuatorsGetState() {
     return s_state;
-}
-
-void actuatorsDrainQueue(TickType_t wait) {
-    ActuatorCmd cmd;
-    if (xQueueReceive(actuatorCmdQueue, &cmd, wait) == pdTRUE) {
-        actuatorsApply(cmd);
-        // draine le reste sans attendre
-        while (xQueueReceive(actuatorCmdQueue, &cmd, 0) == pdTRUE) {
-            actuatorsApply(cmd);
-        }
-    }
 }

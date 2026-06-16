@@ -29,24 +29,12 @@ bool securityParseActuatorCmd(const char* json, size_t len, ActuatorCmd& out) {
                                                       : nullptr;
     if (!type) return false;
 
-    // {"type":"relay","on":true|false}
+    // Seule commande externe acceptée : {"type":"relay","on":true|false}.
+    // (Les LEDs sont des voyants d'état pilotés par control/, non commandables.)
     if (strcmp(type, "relay") == 0) {
         if (!doc["on"].is<bool>()) return false;
         out.type    = ActuatorType::RELAY;
         out.relayOn = doc["on"].as<bool>();
-        return true;
-    }
-
-    // {"type":"led","r":0..255,"g":0..255,"b":0..255}
-    if (strcmp(type, "led") == 0) {
-        if (!doc["r"].is<int>() || !doc["g"].is<int>() || !doc["b"].is<int>())
-            return false;
-        int r = doc["r"], g = doc["g"], b = doc["b"];
-        if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) return false;
-        out.type = ActuatorType::LED_RGB;
-        out.r = (uint8_t)r;
-        out.g = (uint8_t)g;
-        out.b = (uint8_t)b;
         return true;
     }
 

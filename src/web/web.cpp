@@ -44,10 +44,7 @@ static void handleLive(AsyncWebServerRequest* req) {
     doc["wifi"] = (bool)(bits & BIT_WIFI_OK);
     doc["mqtt"] = (bool)(bits & BIT_MQTT_OK);
 
-    ActuatorState a = actuatorsGetState();
-    doc["relay"] = a.relayOn;
-    JsonObject rgb = doc["rgb"].to<JsonObject>();
-    rgb["r"] = a.r; rgb["g"] = a.g; rgb["b"] = a.b;
+    doc["relay"] = actuatorsGetState().relayOn;
 
     // État métier (régulation / arrêt d'urgence)
     ControlConfig cfg = runtimeGetControl();
@@ -121,7 +118,7 @@ bool webInit() {
         req->send(200, "application/json", "{\"ok\":true}");
     });
 
-    // POST /api/actuator : {"type":"relay","on":true} | {"type":"led","r","g","b"}
+    // POST /api/actuator : {"type":"relay","on":true|false}
     server.addHandler(new AsyncCallbackJsonWebHandler(
         "/api/actuator",
         [](AsyncWebServerRequest* req, JsonVariant& json) {
