@@ -15,7 +15,7 @@ carte seule (sans serveur, elle bufferise en offline).
 
 | Outil | Pour quoi | Vérifier |
 |---|---|---|
-| **PlatformIO Core** (déjà installé) | compiler/flasher | `pio --version` |
+| **PlatformIO Core** | compiler/flasher | `pio --version` |
 | **Pilote USB-série** ESP32 (CP210x ou CH340) | voir la carte sur un COM | apparition d'un `COMx` |
 | **Docker Desktop** | stack serveur | `docker --version` |
 | **Git** | récupérer le projet | `git --version` |
@@ -33,15 +33,9 @@ carte seule (sans serveur, elle bufferise en offline).
 Breadboard : colonnes **0→60**, lignes **A-E** (banc haut) / **F-J** (banc bas)
 séparées par la rainure. Rails : **+ haut = 3,3 V**, **− haut = GND**, **+ bas = 5 V**.
 
-> 🛑 **PIÈGE N°1 — breadboard coupée en deux !**
-> Sur beaucoup de grandes breadboards, **les rails d'alimentation ne sont PAS
-> continus** : il y a une **coupure au milieu** (vers la colonne ~30, parfois
-> visible par une interruption du trait coloré). Les deux moitiés ne sont pas
-> reliées. Résultat classique : le DHT (côté gauche, près de l'ESP) marche, mais
-> **les LEDs/relais (côté droit) restent morts**.
-> **➡️ Ajoute 2 cavaliers qui pontent la coupure** — un sur le rail **+** et un sur
-> le rail **−** — pour relier la moitié gauche à la moitié droite. (Et idem pour le
-> rail **+ bas 5 V** si le relais est à droite.) **Fais-le en premier.**
+> Note : sur certaines breadboards les rails d'alimentation sont coupés au milieu.
+> Si c'est le cas, ponte les deux moitiés avec un cavalier sur le rail **+** et un
+> sur le rail **−**.
 
 ### Table de connexions (netlist)
 
@@ -58,7 +52,7 @@ séparées par la rainure. Rails : **+ haut = 3,3 V**, **− haut = GND**, **+ b
 ### Étapes (ESP32 hors breadboard, relié par cavaliers en ligne A)
 
 **A. Rails**
-1. **Pont central** : 1 cavalier sur le rail **+ haut**, 1 sur le rail **− haut** (cf. piège n°1).
+1. **Pont central** (si rails coupés) : 1 cavalier sur le rail **+ haut**, 1 sur le rail **− haut**.
 2. Câble **3,3 V** : ESP **3V3** → rail **+ haut**.
 3. Câble **5 V** : ESP **VIN/5V** → rail **+ bas**.
 4. Câble **GND** : ESP **GND** → rail **− haut**.
@@ -92,7 +86,7 @@ séparées par la rainure. Rails : **+ haut = 3,3 V**, **− haut = GND**, **+ b
 20. Toucher les 2 bouts ensemble = contact fermé → arrêt d'urgence.
 
 **H. Vérifs AVANT l'USB**
-21. **Pont central** des rails bien en place (piège n°1).
+21. **Pont central** des rails en place (si la breadboard est coupée au milieu).
 22. Chaque **résistance** enjambe **2 colonnes différentes** (25↔30 / 35↔40 / 45↔50) — sinon court-circuitée.
 23. **Anode** (patte longue) côté résistance, **cathode** (patte courte) côté GND.
 24. Aucun fil ne relie le **5 V** au **3,3 V** ni à une GPIO.
@@ -101,7 +95,7 @@ séparées par la rainure. Rails : **+ haut = 3,3 V**, **− haut = GND**, **+ b
 ### BOM résistances
 - **3 × 470 Ω** (limitation LEDs) · **1 × 10 kΩ** (pull-up DHT22, si non intégré).
 
-> **Pièges fréquents** : ① rail coupé au milieu (ci-dessus) ; ② LED à l'envers
+> **Pièges fréquents** : ① rail coupé au milieu (cf. note plus haut) ; ② LED à l'envers
 > (ne s'allume jamais) ; ③ contact câblé sur la mauvaise GPIO (doit être **27**) ;
 > ④ module relais **actif-haut** alors que le firmware est actif-bas → passer
 > `RELAY_ACTIVE_LOW=false` dans `config.h`.
