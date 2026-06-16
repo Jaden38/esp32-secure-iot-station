@@ -5,85 +5,109 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b0f17" />
   <title>Station IoT — Armoire technique</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>Supervision armoire technique</h1>
-    <div id="conn">
-      <span id="wifi" class="badge">Wi-Fi —</span>
-      <span id="mqtt" class="badge">MQTT —</span>
-      <span id="estop" class="badge">—</span>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-logo">🛡️</span>
+      <div class="brand-text">
+        <h1>Station IoT</h1>
+        <p class="brand-sub">Supervision armoire technique</p>
+      </div>
+    </div>
+    <div id="conn" class="pills">
+      <span id="wifi" class="pill"><span class="dot"></span>Wi-Fi —</span>
+      <span id="mqtt" class="pill"><span class="dot"></span>MQTT —</span>
+      <span id="estop" class="pill"><span class="dot"></span>—</span>
     </div>
   </header>
 
   <main>
-    <!-- Live capteurs + état régulation -->
-    <section id="live">
-      <h2>Mesures live</h2>
-      <ul>
-        <li>Température : <span id="temp">—</span> °C</li>
-        <li>Humidité : <span id="humidity">—</span> %</li>
-        <li>Contact : <span id="contact">—</span></li>
-        <li>Mode : <span id="mode">—</span></li>
-        <li>Ventilation (relais) : <span id="relay">—</span></li>
-      </ul>
+    <!-- Mesures live -->
+    <section class="metrics" aria-label="Mesures live">
+      <article class="metric">
+        <span class="metric-icon">🌡️</span>
+        <div class="metric-body">
+          <span class="metric-value"><span id="temp">—</span><small>°C</small></span>
+          <span class="metric-label">Température</span>
+        </div>
+      </article>
+      <article class="metric">
+        <span class="metric-icon">💧</span>
+        <div class="metric-body">
+          <span class="metric-value"><span id="humidity">—</span><small>%</small></span>
+          <span class="metric-label">Humidité</span>
+        </div>
+      </article>
+      <article class="metric chips-card">
+        <div class="chip"><span class="chip-k">Contact</span><span class="chip-v" id="contact">—</span></div>
+        <div class="chip"><span class="chip-k">Mode</span><span class="chip-v" id="mode">—</span></div>
+        <div class="chip"><span class="chip-k">Ventilation</span><span class="chip-v" id="relay">—</span></div>
+      </article>
     </section>
 
-    <!-- OLED virtuel : reproduit l'écran de supervision (matériel absent) -->
-    <section id="oled-section">
-      <h2>Supervision (OLED virtuel)</h2>
-      <pre id="oled" class="oled">—</pre>
-    </section>
+    <div class="cards">
+      <!-- OLED virtuel : reproduit l'écran de supervision (matériel absent) -->
+      <section class="card span-2" id="oled-section">
+        <h2><span class="card-ico">🖥️</span>Supervision <small>(OLED virtuel)</small></h2>
+        <pre id="oled" class="oled">—</pre>
+      </section>
 
-    <!-- Arrêt d'urgence -->
-    <section id="safety">
-      <h2>Arrêt d'urgence</h2>
-      <p>État : <strong id="estop-state">—</strong></p>
-      <button id="estop-reset">Réarmer</button>
-    </section>
+      <!-- Arrêt d'urgence -->
+      <section class="card" id="safety">
+        <h2><span class="card-ico">🚨</span>Arrêt d'urgence</h2>
+        <p class="estop-line">État : <strong id="estop-state">—</strong></p>
+        <button id="estop-reset" class="btn btn-danger">Réarmer</button>
+      </section>
 
-    <!-- Régulation -->
-    <section id="regulation">
-      <h2>Régulation</h2>
-      <form id="ctrl-form">
-        <label>Mode
-          <select name="mode">
-            <option value="auto">Auto</option>
-            <option value="manuel">Manuel</option>
-          </select>
-        </label>
-        <label>Seuil ON (°C) <input name="tempOn" type="number" step="0.5" /></label>
-        <label>Hystérésis (°C) <input name="hysteresis" type="number" step="0.5" /></label>
-        <label>Alerte humidité (%) <input name="humAlert" type="number" step="1" /></label>
-        <label>Acquisition (ms) <input name="acqPeriodMs" type="number" step="500" /></label>
-        <label>Publication (ms) <input name="pubPeriodMs" type="number" step="1000" /></label>
-        <button type="submit">Enregistrer</button>
-      </form>
-    </section>
+      <!-- Commande manuelle ventilation -->
+      <section class="card" id="actuators">
+        <h2><span class="card-ico">🌀</span>Ventilation</h2>
+        <div class="btn-row">
+          <button id="relay-on" class="btn">Forcer ON</button>
+          <button id="relay-off" class="btn btn-ghost">Forcer OFF</button>
+        </div>
+        <p class="hint">Un ordre bascule la régulation en mode manuel.</p>
+      </section>
 
-    <!-- Commande manuelle ventilation -->
-    <section id="actuators">
-      <h2>Ventilation (mode manuel)</h2>
-      <button id="relay-on">Forcer ON</button>
-      <button id="relay-off">Forcer OFF</button>
-      <p class="hint">Un ordre bascule la régulation en mode manuel.</p>
-    </section>
+      <!-- Régulation -->
+      <section class="card span-2" id="regulation">
+        <h2><span class="card-ico">⚙️</span>Régulation</h2>
+        <form id="ctrl-form" class="grid-form">
+          <label>Mode
+            <select name="mode">
+              <option value="auto">Auto</option>
+              <option value="manuel">Manuel</option>
+            </select>
+          </label>
+          <label>Seuil ON (°C) <input name="tempOn" type="number" step="0.5" /></label>
+          <label>Hystérésis (°C) <input name="hysteresis" type="number" step="0.5" /></label>
+          <label>Alerte humidité (%) <input name="humAlert" type="number" step="1" /></label>
+          <label>Acquisition (ms) <input name="acqPeriodMs" type="number" step="500" /></label>
+          <label>Publication (ms) <input name="pubPeriodMs" type="number" step="1000" /></label>
+          <button type="submit" class="btn full">Enregistrer</button>
+        </form>
+      </section>
 
-    <!-- Configuration MQTT -->
-    <section id="config">
-      <h2>Configuration MQTT</h2>
-      <form id="mqtt-form">
-        <label>Broker <input name="host" /></label>
-        <label>Port <input name="port" type="number" value="1883" /></label>
-        <label>User <input name="user" /></label>
-        <label>Pass <input name="pass" type="password" /></label>
-        <label>Topic <input name="topic" /></label>
-        <button type="submit">Enregistrer</button>
-      </form>
-    </section>
+      <!-- Configuration MQTT -->
+      <section class="card span-2" id="config">
+        <h2><span class="card-ico">📡</span>Configuration MQTT</h2>
+        <form id="mqtt-form" class="grid-form">
+          <label>Broker <input name="host" /></label>
+          <label>Port <input name="port" type="number" value="1883" /></label>
+          <label>User <input name="user" /></label>
+          <label>Pass <input name="pass" type="password" /></label>
+          <label class="full">Topic <input name="topic" /></label>
+          <button type="submit" class="btn full">Enregistrer</button>
+        </form>
+      </section>
+    </div>
   </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="app.js"></script>
 </body>

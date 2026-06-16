@@ -24,9 +24,22 @@ function setVal(name, v) {
 function setBadge(id, label, ok) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.textContent = label + " " + (ok ? "OK" : "KO");
+  el.innerHTML = '<span class="dot"></span>' + label + " " + (ok ? "OK" : "KO");
   el.classList.toggle("ok", !!ok);
   el.classList.toggle("ko", !ok);
+}
+
+// Toast de confirmation (succès / erreur)
+let toastTimer = null;
+function toast(msg, ok = true) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.toggle("ok", ok);
+  t.classList.toggle("ko", !ok);
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
 // --- Live + état régulation/sécurité ---
@@ -40,13 +53,15 @@ async function refresh() {
     setText("contact", d.contact ? "fermé" : "ouvert");
     setText("mode", d.mode);
     setText("relay", d.relay ? "ON" : "OFF");
+    document.getElementById("relay")?.classList.toggle("on", !!d.relay);
+    document.getElementById("contact")?.classList.toggle("on", !!d.contact);
     setBadge("wifi", "Wi-Fi", d.wifi);
     setBadge("mqtt", "MQTT", d.mqtt);
     // Badge + état arrêt d'urgence
     const estop = !!d.estop;
     const e = document.getElementById("estop");
     if (e) {
-      e.textContent = estop ? "ARRÊT URGENCE" : "Sécurité OK";
+      e.innerHTML = '<span class="dot"></span>' + (estop ? "ARRÊT URGENCE" : "Sécurité OK");
       e.classList.toggle("ko", estop);
       e.classList.toggle("ok", !estop);
     }
@@ -88,13 +103,15 @@ document.getElementById("ctrl-form")?.addEventListener("submit", async (e) => {
     acqPeriodMs: Number(fd.get("acqPeriodMs")),
     pubPeriodMs: Number(fd.get("pubPeriodMs")),
   };
-  await fetch("/api/control", { method: "POST", headers: jsonHeaders(), body: JSON.stringify(body) });
+  const r = await fetch("/api/control", { method: "POST", headers: jsonHeaders(), body: JSON.stringify(body) });
+  toast(r.ok ? "Régulation enregistrée" : "Échec enregistrement", r.ok);
   loadControl();
 });
 
 // --- Arrêt d'urgence : réarmement ---
 document.getElementById("estop-reset")?.addEventListener("click", async () => {
-  await fetch("/api/estop/reset", { method: "POST", headers: authHeaders() });
+  const r = await fetch("/api/estop/reset", { method: "POST", headers: authHeaders() });
+  toast(r.ok ? "Arrêt d'urgence réarmé" : "Échec réarmement", r.ok);
   refresh();
 });
 
@@ -102,8 +119,9 @@ document.getElementById("estop-reset")?.addEventListener("click", async () => {
 document.getElementById("relay-on")?.addEventListener("click", () => sendRelay(true));
 document.getElementById("relay-off")?.addEventListener("click", () => sendRelay(false));
 async function sendRelay(on) {
-  await fetch("/api/actuator", { method: "POST", headers: jsonHeaders(),
+  const r = await fetch("/api/actuator", { method: "POST", headers: jsonHeaders(),
     body: JSON.stringify({ type: "relay", on }) });
+  toast(r.ok ? ("Ventilation " + (on ? "ON" : "OFF") + " (mode manuel)") : "Échec commande", r.ok);
   setTimeout(() => { refresh(); loadControl(); }, 300);
 }
 
@@ -128,7 +146,8 @@ document.getElementById("mqtt-form")?.addEventListener("submit", async (e) => {
   const fd = new FormData(e.target);
   const body = { host: fd.get("host"), port: Number(fd.get("port")),
     user: fd.get("user"), pass: fd.get("pass") };
-  await fetch("/api/config", { method: "POST", headers: jsonHeaders(), body: JSON.stringify(body) });
+  const r = await fetch("/api/config", { method: "POST", headers: jsonHeaders(), body: JSON.stringify(body) });
+  toast(r.ok ? "Config MQTT enregistrée" : "Échec enregistrement", r.ok);
   loadConfig();
 });
 
