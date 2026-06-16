@@ -11,6 +11,7 @@ Projet du module **Système IoT** — Master II.
 
 | Doc | Contenu |
 |---|---|
+| [`docs/RAPPORT-TECHNIQUE.md`](docs/RAPPORT-TECHNIQUE.md) | Rapport de synthèse (≤ 5 pages) + couverture des badges |
 | [`docs/SPEC-METIER.md`](docs/SPEC-METIER.md) | Contexte métier + découpage des opérations FreeRTOS |
 | [`docs/SPEC-TECHNIQUE.md`](docs/SPEC-TECHNIQUE.md) | Architecture, stack, diagrammes, contrat MQTT, sécurité/perf |
 | [`docs/SETUP.md`](docs/SETUP.md) | Mise en route pas à pas (câblage + flash + serveur) |
