@@ -40,11 +40,5 @@
 
   { "id": "f_relay", "type": "function", "z": "flow1", "name": "cmd relais", "func": "msg.payload = { type: 'relay', on: msg.payload };\nreturn msg;", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 320, "y": 440, "wires": [["n_cmdout"]] },
 
-  { "id": "sl_r", "type": "ui_slider", "z": "flow1", "name": "R", "label": "R", "tooltip": "", "group": "grpCmd", "order": 2, "width": "6", "height": "1", "passthru": false, "outs": "end", "topic": "r", "topicType": "str", "min": 0, "max": "255", "step": 1, "className": "", "x": 130, "y": 500, "wires": [["f_rgb"]] },
-  { "id": "sl_g", "type": "ui_slider", "z": "flow1", "name": "G", "label": "G", "tooltip": "", "group": "grpCmd", "order": 3, "width": "6", "height": "1", "passthru": false, "outs": "end", "topic": "g", "topicType": "str", "min": 0, "max": "255", "step": 1, "className": "", "x": 130, "y": 540, "wires": [["f_rgb"]] },
-  { "id": "sl_b", "type": "ui_slider", "z": "flow1", "name": "B", "label": "B", "tooltip": "", "group": "grpCmd", "order": 4, "width": "6", "height": "1", "passthru": false, "outs": "end", "topic": "b", "topicType": "str", "min": 0, "max": "255", "step": 1, "className": "", "x": 130, "y": 580, "wires": [["f_rgb"]] },
-
-  { "id": "f_rgb", "type": "function", "z": "flow1", "name": "cmd LED", "func": "const c = context.get('rgb') || { r: 0, g: 0, b: 0 };\nif (msg.topic === 'r') c.r = msg.payload;\nelse if (msg.topic === 'g') c.g = msg.payload;\nelse if (msg.topic === 'b') c.b = msg.payload;\ncontext.set('rgb', c);\nmsg.payload = { type: 'led', r: c.r, g: c.g, b: c.b };\nreturn msg;", "outputs": 1, "noerr": 0, "initialize": "", "finalize": "", "libs": [], "x": 320, "y": 540, "wires": [["n_cmdout"]] },
-
   { "id": "n_cmdout", "type": "mqtt out", "z": "flow1", "name": "cmd", "topic": "campus/g1/ESP32-1/cmd", "qos": "1", "retain": "false", "respTopic": "", "contentType": "", "userProps": "", "correl": "", "expiry": "", "broker": "broker1", "x": 550, "y": 490, "wires": [] }
 ]
