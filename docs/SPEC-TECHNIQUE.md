@@ -23,34 +23,7 @@ Empreinte : **RAM ~15 %**, **Flash ~38 %** (sur 3 Mo).
 
 ## Architecture matérielle
 
-```mermaid
-flowchart LR
-    subgraph ESP32["ESP32-WROOM-32 DevKit"]
-        direction TB
-        MCU["CPU Xtensa LX6<br/>dual-core @ 240 MHz<br/>FreeRTOS SMP"]
-        ONEW["1-wire (GPIO 4)"]
-        GPIO["GPIO"]
-        PWM["LEDC (PWM 5 kHz)"]
-        WIFI["Wi-Fi / TCP-IP"]
-        FS["LittleFS"]
-    end
-
-    DHT["DHT22 — temp/hum"]
-    LEDR["LED rouge (alarme)"]
-    LEDO["LED orange (actif)"]
-    LEDV["LED verte (nominal)"]
-    CONTACT["Contact 2 fils + pull-up"]
-    RLY["Relais 5V"]
-
-    ONEW -->|GPIO 4| DHT
-    PWM -->|GPIO 25| LEDR
-    PWM -->|GPIO 26| LEDO
-    PWM -->|GPIO 33| LEDV
-    GPIO -->|GPIO 27 + IRQ| CONTACT
-    GPIO -->|GPIO 32| RLY
-    MCU --- ONEW & GPIO & PWM & WIFI & FS
-    WIFI -.->|MQTT/HTTP| NET((Réseau))
-```
+![Architecture matérielle : ESP32 et périphériques](images/archi-logicielle.png)
 
 > OLED SSD1306 et potentiomètre absents → remplacés en logiciel (OLED virtuel
 > web + seuil web). DHT22 en 1-wire → **aucun périphérique I²C requis** par défaut.
@@ -60,7 +33,41 @@ flowchart LR
 8 tâches, communication par queues / mutex / event-groups (aucun état mutable
 partagé sans protection).
 
-![Architecture logicielle : tâches, cœurs, queues, mutex, event-groups](images/archi-logicielle.png)
+```mermaid
+flowchart TB
+    subgraph CORE0["Cœur 0"]
+        TSENS["SensorAcquisition (p3)"]
+        TCTRL["Control / régulation (p3)"]
+        TSAFE["Safety / arrêt urgence (p5)"]
+        TSUP["Supervision (p1)"]
+    end
+    subgraph CORE1["Cœur 1"]
+        TNET["NetworkMQTT (p4)"]
+        TTEL["Telemetry (p2)"]
+        TWEB["WebServer (p2)"]
+        TSTO["StorageReplay (p2)"]
+    end
+
+    CACHE["cache latestSample (mutex)"]
+    QCMD[["actuatorCmdQueue"]]
+    QOUT[["outboundJsonQueue"]]
+    EVNET{{"netState : WIFI_OK / MQTT_OK"}}
+    EVAPP{{"appState : ESTOP"}}
+    SEM(("estopSem"))
+
+    TSENS --> CACHE
+    CACHE --> TCTRL & TTEL & TWEB & TSUP
+    TSENS -. ISR contact .-> SEM --> TSAFE
+    TSAFE -->|set| EVAPP --> TCTRL
+    TCTRL -->|relais + LED| ACT["Actuators"]
+    QCMD --> TCTRL
+    TWEB --> QCMD
+    TNET -->|cmd MQTT in| QCMD
+    TTEL --> QOUT --> TNET
+    TNET -->|si MQTT KO| TSTO
+    TSTO -->|replay| QOUT
+    TNET -.->|set/clear| EVNET
+```
 
 ## Flux de données end-to-end
 
